@@ -98,10 +98,26 @@ check_pbproject() {
 
 init_project() {
     local project_name="${1:-}"
-    local project_path="${2:-$PWD/$project_name}"
-
+    
     if [[ -z "$project_name" ]]; then
-        error "Project name is required"
+        error "Project name is required
+
+Usage:
+  pbproject init my-project     # Create new directory 'my-project'
+  pbproject init .              # Initialize current directory as project
+
+Examples:
+  pbproject init my-cool-app    # Creates ~/Projects/my-cool-app/
+  cd ~/existing-folder && pbproject init .    # Initialize existing folder"
+    fi
+
+    # Handle current directory initialization
+    if [[ "$project_name" == "." ]]; then
+        local project_path="$PWD"
+        local display_name="$(basename "$PWD")"
+    else
+        local project_path="${2:-$PWD/$project_name}"
+        local display_name="$project_name"
     fi
 
     check_pbproject
@@ -172,13 +188,19 @@ EOF
         success "Created .gitignore"
     fi
 
-    success "Project '$project_name' initialized at $project_path"
+    success "Project '$display_name' initialized at $project_path"
     echo
     info "🚀 Next steps:"
-    echo "   1. cd $project_path"
-    echo "   2. Add your code and documentation"
-    echo "   3. When ready for AI development support: llm-setup"
-    echo "   4. Create GitHub repo when ready: pbproject newghrepo"
+    if [[ "$project_name" == "." ]]; then
+        echo "   1. Add your code and documentation"
+        echo "   2. When ready for AI development support: llm-setup"
+        echo "   3. Create GitHub repo when ready: pbproject newghrepo"
+    else
+        echo "   1. cd $project_path"
+        echo "   2. Add your code and documentation"
+        echo "   3. When ready for AI development support: llm-setup"
+        echo "   4. Create GitHub repo when ready: pbproject newghrepo"
+    fi
     echo
     info "💡 Other pbproject commands:"
     echo "   • pbproject status    - Show project info and configuration"
