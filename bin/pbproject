@@ -5,10 +5,10 @@ set -euo pipefail
 # Manages symlinked project templates from dotfiles
 
 # Global configuration
-# Auto-detect dotfiles root based on script location (resolve symlinks)
+# Auto-detect pbproject root based on script location (resolve symlinks)
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
+PBPROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 SCRIPT_NAME="$(basename "$0")"
 PROJECTS_DIR="$HOME/Projects"
 
@@ -48,7 +48,7 @@ EXAMPLES:
     $SCRIPT_NAME newghrepo                      # Create GitHub repo for current project
 
 BASE FILES:
-    The following files/directories will be symlinked from dotfiles:
+    The following files/directories will be created from pbproject templates:
     - AGENTS.md (OpenCode instructions)  
     - CLAUDE.md (Claude Desktop instructions)
     - GEMINI.md (Gemini CLI instructions)
@@ -77,14 +77,19 @@ success() {
     echo "✅ $1"
 }
 
-check_dotfiles() {
-    if [[ ! -d "$DOTFILES_ROOT" ]]; then
-        error "Dotfiles directory not found at $DOTFILES_ROOT"
+check_pbproject() {
+    if [[ ! -d "$PBPROJECT_ROOT" ]]; then
+        error "pbproject directory not found at $PBPROJECT_ROOT"
     fi
 
     # Check for llm-link script
-    if [[ ! -f "$DOTFILES_ROOT/bin/llm-link" ]]; then
-        error "llm-link script not found at $DOTFILES_ROOT/bin/llm-link"
+    if [[ ! -f "$PBPROJECT_ROOT/bin/llm-link" ]]; then
+        error "llm-link script not found at $PBPROJECT_ROOT/bin/llm-link"
+    fi
+
+    # Check for project templates
+    if [[ ! -d "$PBPROJECT_ROOT/project-templates" ]]; then
+        error "project-templates directory not found at $PBPROJECT_ROOT/project-templates"
     fi
 }
 
@@ -96,7 +101,7 @@ init_project() {
         error "Project name is required"
     fi
 
-    check_dotfiles
+    check_pbproject
 
     info "Creating project directory: $project_path"
     mkdir -p "$project_path"
@@ -120,11 +125,11 @@ init_project() {
         success "LLM instructions configured"
     else
         # Fallback to PATH if not found
-        if [[ -x "$DOTFILES_ROOT/bin/llm-link" ]]; then
-            "$DOTFILES_ROOT/bin/llm-link"
+        if [[ -x "$PBPROJECT_ROOT/bin/llm-link" ]]; then
+            "$PBPROJECT_ROOT/bin/llm-link"
             success "LLM instructions configured"
         else
-            error "llm-link command not found and not executable at $DOTFILES_ROOT/bin/llm-link"
+            error "llm-link command not found and not executable at $PBPROJECT_ROOT/bin/llm-link"
         fi
     fi
 
@@ -197,10 +202,10 @@ detach_project() {
         llm-link --detach
     else
         # Fallback to PATH if not found
-        if [[ -x "$DOTFILES_ROOT/bin/llm-link" ]]; then
-            "$DOTFILES_ROOT/bin/llm-link" --detach
+        if [[ -x "$PBPROJECT_ROOT/bin/llm-link" ]]; then
+            "$PBPROJECT_ROOT/bin/llm-link" --detach
         else
-            error "llm-link command not found and not executable at $DOTFILES_ROOT/bin/llm-link"
+            error "llm-link command not found and not executable at $PBPROJECT_ROOT/bin/llm-link"
         fi
     fi
 }
@@ -221,10 +226,10 @@ show_status() {
         llm-link --status
     else
         # Fallback to PATH if not found
-        if [[ -x "$DOTFILES_ROOT/bin/llm-link" ]]; then
-            "$DOTFILES_ROOT/bin/llm-link" --status
+        if [[ -x "$PBPROJECT_ROOT/bin/llm-link" ]]; then
+            "$PBPROJECT_ROOT/bin/llm-link" --status
         else
-            error "llm-link command not found and not executable at $DOTFILES_ROOT/bin/llm-link"
+            error "llm-link command not found and not executable at $PBPROJECT_ROOT/bin/llm-link"
         fi
     fi
 }

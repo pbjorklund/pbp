@@ -1,73 +1,44 @@
-# Project Analysis and Documentation TODOs
-
-## Initial Project Understanding
-- [ ] Explore repository structure using LS and Read tools to understand codebase organization
-- [ ] Read existing README.md to understand current project description and identify gaps
-- [ ] Identify main directories and their purposes (src/, docs/, config/, etc.)
-- [ ] Check for package.json, Cargo.toml, pyproject.toml, or other dependency files to understand tech stack
-- [ ] Look for build/deployment scripts to understand project workflow
-
-## Technology Stack Analysis
-- [ ] Identify primary programming languages used (via file extensions and directory structure)
-- [ ] Determine frameworks, libraries, and tools from dependency files
-- [ ] Check for configuration files that indicate specific technologies (docker-compose.yml, CI/CD configs, etc.)
-- [ ] Identify build systems, test frameworks, and development tools
-- [ ] Note any special requirements or environment dependencies
-
-## Project Purpose and Scope
-- [ ] Determine if this is: application, library, tooling, configuration, documentation, or mixed
-- [ ] Identify target audience: developers, end-users, system administrators, etc.
-- [ ] Understand deployment model: CLI tool, web app, desktop app, system service, etc.
-- [ ] Check for any domain-specific terminology or business logic
-
-## Documentation Quality Assessment
-- [ ] Evaluate README.md completeness: installation, usage, examples, contribution guidelines
-- [ ] Check for inline code documentation and comments
-- [ ] Identify missing sections that would help new contributors or users
-- [ ] Look for outdated information that needs updating
-
-## Development Workflow Analysis
-- [ ] Check for CI/CD configuration (.github/workflows/, .gitlab-ci.yml, etc.)
-- [ ] Identify testing strategy and test file locations
-- [ ] Look for development scripts (package.json scripts, Makefile targets, etc.)
-- [ ] Check for linting, formatting, and code quality tools
-
-## Project-Specific Instructions Template
-Once analysis is complete, replace this section with:
-
-```markdown
-# [Project Name] - LLM Development Instructions
+# pbproject — LLM Development Instructions
 
 ## Project Overview
-- **Purpose**: [Brief description of what this project does]
-- **Type**: [CLI tool/Web app/Library/Configuration/etc.]
-- **Target Users**: [Who uses this project]
-- **Tech Stack**: [Primary languages, frameworks, tools]
+- Purpose: Bootstrap and manage projects with consistent, shareable LLM instruction files and repo scaffolding.
+- Type: CLI tooling (bash scripts)
+- Target Users: Developers maintaining many repos with unified AI assistant configs
+- Tech Stack: bash, git, GitHub CLI (gh), standard Unix tools
 
 ## Development Environment
-- **Prerequisites**: [Required software, versions, accounts]
-- **Setup Commands**: [How to get development environment running]
-- **Build Process**: [How to build/compile the project]
-- **Testing**: [How to run tests, what test frameworks are used]
+- Prerequisites: bash, git, gh, readlink, ln, cp; optional wl-copy/xclip for clipboard
+- Setup: ensure `bin/` is on PATH or symlink `pbproject` and `llm-link` into a directory on PATH
+- Build: none (shell scripts); make files executable
+- Testing: manual smoke tests by invoking commands in a temp directory
 
 ## Code Organization
-- **Key Directories**: [Brief description of main folders and their purposes]
-- **Entry Points**: [Main files where execution begins]
-- **Configuration**: [Where settings/config files are located]
-- **Dependencies**: [How dependencies are managed]
-
-## Development Guidelines
-- **Code Style**: [Formatting, naming conventions, patterns used]
-- **Testing Requirements**: [When to write tests, coverage expectations]
-- **Documentation Standards**: [How to document code, APIs, features]
-- **Review Process**: [How changes are reviewed and merged]
+- Key Directories:
+  - bin/: CLI scripts (`pbproject`, `llm-link`)
+  - project-templates/: LLM templates and scaffolding (github/, roo/, LLM_INSTRUCTIONS.md)
+  - .github/, .roo/: example/template instruction trees
+- Entry Points: `bin/pbproject`, `bin/llm-link`
+- Configuration: auto-detects dotfiles root relative to script path
+- Dependencies: external tools only; no package manager
 
 ## Common Tasks
-- **Adding Features**: [Typical workflow for new functionality]
-- **Bug Fixes**: [How to approach debugging and fixes]
-- **Updating Dependencies**: [Process for dependency management]
-- **Deployment**: [How releases/deployments work]
+- Initialize project:
+  - `pbproject init <name> [path]` → creates repo, writes README.md and .gitignore, runs `llm-link`
+- Manage LLM files:
+  - `llm-link` → copies project `LLM_INSTRUCTIONS.md`; symlinks `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` to it; copies `.github/` and `.roo/`
+  - `llm-link --status` → shows copied/symlinked/missing
+  - `llm-link --detach` → converts internal symlinks into local copies
+- Project status: `pbproject status`
+- Detach in project: `pbproject detach`
+- Migrate folder to new repo in `~/Projects`: `pbproject migrate <folder> [source_path]`
+- Create GitHub repo: `pbproject newghrepo`
+
+## Development Guidelines
+- Shell style: `set -euo pipefail`; quote paths; prefer absolute paths via `readlink -f`
+- UX: print clear info/success/error lines; provide backups to /tmp before linking
+- Security: do not commit secrets; `gh` auth must be explicit; verify SSH keys
+- Docs: keep README and this file in sync with script behavior
 
 ## Project-Specific Context
-[Any domain-specific knowledge, business rules, architectural decisions, or special considerations that would help an AI assistant work effectively on this codebase]
-```
+- `llm-link` expects global templates in dotfiles: `project-templates/LLM_INSTRUCTIONS.md`, `project-templates/github`, `project-templates/roo`, and `dotfiles/claude/CLAUDE.md`
+- `pbproject migrate` commits and pushes a new repo, then removes the original folder from the source repo and commits that change

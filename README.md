@@ -1,10 +1,48 @@
-# bin
+# pbproject
 
-## Description
-TODO: Add project description
+CLI tools for project management and AI assistant configuration.
+
+## What it does
+
+**pbproject**: Manages project lifecycle
+- `pbproject init my-app` - Create new project with AI config files
+- `pbproject migrate folder_name` - Extract folder to new GitHub repo in ~/Projects/
+- `pbproject newghrepo` - Create GitHub repo for current project
+- `pbproject status/detach` - Manage project configuration
+
+**llm-link**: Manages AI instruction files  
+- `llm-link` - Set up AI instruction files (CLAUDE.md, AGENTS.md, etc.)
+- `llm-link --status` - Show which files are linked vs copied
+- `llm-link --detach` - Convert symlinks to independent copies
+
+## Installation
+
+```bash
+git clone https://github.com/pbjorklund/pbproject.git
+cd pbproject
+./setup.sh
+```
+
+Requires: bash, git, GitHub CLI (`gh`)
 
 ## Usage
-TODO: Add usage instructions
 
-## Development
-TODO: Add development setup instructions
+Create a new project:
+```bash
+pbproject init my-tool
+```
+
+Promote a folder from your experiments to a standalone repo:
+```bash
+cd ~/my-experiments
+pbproject migrate useful_script
+# Creates ~/Projects/useful_script as a GitHub repo, removes original
+```
+
+Set up AI files in existing project:
+```bash
+llm-link
+# Creates LLM_INSTRUCTIONS.md and symlinks CLAUDE.md, AGENTS.md, etc. to it
+```
+
+That's it.

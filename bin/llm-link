@@ -5,15 +5,15 @@ set -euo pipefail
 # Provides consistent LLM configuration across all projects
 
 # Global configuration
-# Auto-detect dotfiles root based on script location (resolve symlinks)
+# Auto-detect pbproject root based on script location (resolve symlinks)
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
+PBPROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 SCRIPT_NAME="$(basename "$0")"
 
 show_help() {
     cat <<EOF
-$SCRIPT_NAME - Link LLM instruction files from dotfiles
+$SCRIPT_NAME - Link LLM instruction files from pbproject templates
 
 USAGE:
     $SCRIPT_NAME [--detach|--status|--help]
@@ -25,7 +25,7 @@ COMMANDS:
     --help      Show this help message
 
 DESCRIPTION:
-    Links LLM instruction files from dotfiles project templates to the current
+    Links LLM instruction files from pbproject templates to the current
     directory. Existing files are backed up to /tmp before being replaced.
 
     Files managed:
@@ -59,19 +59,19 @@ success() {
     echo "✅ $1"
 }
 
-check_dotfiles() {
-    if [[ ! -d "$DOTFILES_ROOT" ]]; then
-        error "Dotfiles directory not found at $DOTFILES_ROOT"
+check_pbproject() {
+    if [[ ! -d "$PBPROJECT_ROOT" ]]; then
+        error "pbproject directory not found at $PBPROJECT_ROOT"
     fi
 
     local missing_files=()
-    [[ ! -f "$DOTFILES_ROOT/project-templates/LLM_INSTRUCTIONS.md" ]] && missing_files+=("LLM_INSTRUCTIONS.md")
-    [[ ! -f "$DOTFILES_ROOT/dotfiles/claude/CLAUDE.md" ]] && missing_files+=("claude/CLAUDE.md")
-    [[ ! -d "$DOTFILES_ROOT/project-templates/github" ]] && missing_files+=("github/")
-    [[ ! -d "$DOTFILES_ROOT/project-templates/roo" ]] && missing_files+=("roo/")
+    [[ ! -f "$PBPROJECT_ROOT/project-templates/LLM_INSTRUCTIONS.md" ]] && missing_files+=("LLM_INSTRUCTIONS.md")
+    [[ ! -f "$PBPROJECT_ROOT/dotfiles/claude/CLAUDE.md" ]] && missing_files+=("claude/CLAUDE.md")
+    [[ ! -d "$PBPROJECT_ROOT/project-templates/github" ]] && missing_files+=("github/")
+    [[ ! -d "$PBPROJECT_ROOT/project-templates/roo" ]] && missing_files+=("roo/")
 
     if [[ ${#missing_files[@]} -gt 0 ]]; then
-        error "Missing template files in dotfiles: ${missing_files[*]}"
+        error "Missing template files in pbproject: ${missing_files[*]}"
     fi
 }
 
@@ -108,7 +108,7 @@ create_backup() {
 }
 
 link_llm_files() {
-    check_dotfiles
+    check_pbproject
     
     local backup_dir
     backup_dir=$(create_backup)
@@ -124,7 +124,7 @@ link_llm_files() {
     [[ -e ".roo" ]] && rm -rf ".roo"
     
     # Create single project-specific file and symlink all LLM tools to it
-    cp "$DOTFILES_ROOT/project-templates/LLM_INSTRUCTIONS.md" "LLM_INSTRUCTIONS.md"
+    cp "$PBPROJECT_ROOT/project-templates/LLM_INSTRUCTIONS.md" "LLM_INSTRUCTIONS.md"
     success "📝 Created LLM_INSTRUCTIONS.md"
     
     ln -s "LLM_INSTRUCTIONS.md" "AGENTS.md"
@@ -137,19 +137,19 @@ link_llm_files() {
     success "🔗 Linked GEMINI.md → LLM_INSTRUCTIONS.md"
     
     # Copy entire directory structures 
-    cp -r "$DOTFILES_ROOT/project-templates/github" ".github"
+    cp -r "$PBPROJECT_ROOT/project-templates/github" ".github"
     # Link to global instructions for tools that reference external files
     rm ".github/copilot-instructions.md"
-    ln -s "$DOTFILES_ROOT/dotfiles/claude/CLAUDE.md" ".github/copilot-instructions.md"
+    ln -s "$PBPROJECT_ROOT/dotfiles/claude/CLAUDE.md" ".github/copilot-instructions.md"
     success "📁 Copied .github/ directory structure"
     
-    cp -r "$DOTFILES_ROOT/project-templates/roo" ".roo"
+    cp -r "$PBPROJECT_ROOT/project-templates/roo" ".roo"
     # Link to global instructions for tools that reference external files
     rm ".roo/rules/00-general.md"
-    ln -s "$DOTFILES_ROOT/dotfiles/claude/CLAUDE.md" ".roo/rules/00-general.md"
+    ln -s "$PBPROJECT_ROOT/dotfiles/claude/CLAUDE.md" ".roo/rules/00-general.md"
     success "📁 Copied .roo/ directory structure"
     
-    info "Global LLM instructions managed by dotfiles install.sh"
+    info "Global LLM instructions managed by pbproject"
     info "Project-specific files created with TODO template for customization"
 }
 
