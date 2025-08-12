@@ -177,7 +177,12 @@ EOF
     info "🚀 Next steps:"
     echo "   1. cd $project_path"
     echo "   2. Add your code and documentation"
-    echo "   3. When ready for AI development support, run: llm-setup"
+    echo "   3. When ready for AI development support: llm-setup"
+    echo "   4. Create GitHub repo when ready: pbproject newghrepo"
+    echo
+    info "💡 Other pbproject commands:"
+    echo "   • pbproject status    - Show project info and configuration"
+    echo "   • pbproject migrate   - Extract subfolder to new repo"
 }
 
 detach_project() {
