@@ -1,0 +1,282 @@
+#!/bin/bash
+set -euo pipefail
+
+# llm-link - Link LLM instruction files from dotfiles to current directory
+# Provides consistent LLM configuration across all projects
+
+# Global configuration
+# Auto-detect dotfiles root based on script location (resolve symlinks)
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
+SCRIPT_NAME="$(basename "$0")"
+
+show_help() {
+    cat <<EOF
+$SCRIPT_NAME - Link LLM instruction files from dotfiles
+
+USAGE:
+    $SCRIPT_NAME [--detach|--status|--help]
+
+COMMANDS:
+    (default)   Link LLM instruction files to current directory
+    --detach    Convert symlinks to independent copies for customization
+    --status    Show current status of LLM instruction files
+    --help      Show this help message
+
+DESCRIPTION:
+    Links LLM instruction files from dotfiles project templates to the current
+    directory. Existing files are backed up to /tmp before being replaced.
+
+    Files managed:
+    - AGENTS.md (OpenCode instructions)
+    - CLAUDE.md (Claude Desktop instructions)
+    - GEMINI.md (Gemini CLI instructions)
+    - .github/ (GitHub Copilot and workflows)
+    - .roo/ (Roo configuration and rules)
+
+EXAMPLES:
+    $SCRIPT_NAME                    # Link all LLM files
+    $SCRIPT_NAME --status           # Check current status
+    $SCRIPT_NAME --detach           # Make independent copies
+
+BACKUP:
+    Existing files are backed up to /tmp/llm-backup-YYYY-MM-DD-HHMMSS/
+    before being replaced with symlinks.
+EOF
+}
+
+error() {
+    echo "❌ Error: $1" >&2
+    exit 1
+}
+
+info() {
+    echo "ℹ️  $1"
+}
+
+success() {
+    echo "✅ $1"
+}
+
+check_dotfiles() {
+    if [[ ! -d "$DOTFILES_ROOT" ]]; then
+        error "Dotfiles directory not found at $DOTFILES_ROOT"
+    fi
+
+    local missing_files=()
+    [[ ! -f "$DOTFILES_ROOT/project-templates/LLM_INSTRUCTIONS.md" ]] && missing_files+=("LLM_INSTRUCTIONS.md")
+    [[ ! -f "$DOTFILES_ROOT/dotfiles/claude/CLAUDE.md" ]] && missing_files+=("claude/CLAUDE.md")
+    [[ ! -d "$DOTFILES_ROOT/project-templates/github" ]] && missing_files+=("github/")
+    [[ ! -d "$DOTFILES_ROOT/project-templates/roo" ]] && missing_files+=("roo/")
+
+    if [[ ${#missing_files[@]} -gt 0 ]]; then
+        error "Missing template files in dotfiles: ${missing_files[*]}"
+    fi
+}
+
+create_backup() {
+    local backup_dir="/tmp/llm-backup-$(date +%Y-%m-%d-%H%M%S)"
+    local files_to_backup=()
+    
+    # Check which files exist and need backup
+    [[ -e "AGENTS.md" ]] && files_to_backup+=("AGENTS.md")
+    [[ -e "CLAUDE.md" ]] && files_to_backup+=("CLAUDE.md")
+    [[ -e "GEMINI.md" ]] && files_to_backup+=("GEMINI.md")
+    [[ -e ".github" ]] && files_to_backup+=(".github")
+    [[ -e ".roo" ]] && files_to_backup+=(".roo")
+    
+    if [[ ${#files_to_backup[@]} -eq 0 ]]; then
+        return 0
+    fi
+    
+    info "Creating backup of existing files"
+    mkdir -p "$backup_dir"
+    
+    for file in "${files_to_backup[@]}"; do
+        if [[ -f "$file" ]]; then
+            mkdir -p "$backup_dir/$(dirname "$file")"
+            cp "$file" "$backup_dir/$file"
+        elif [[ -d "$file" ]]; then
+            mkdir -p "$backup_dir/$(dirname "$file")"
+            cp -r "$file" "$backup_dir/$file"
+        fi
+    done
+    
+    success "Backed up existing files to: $backup_dir"
+    echo "$backup_dir"
+}
+
+link_llm_files() {
+    check_dotfiles
+    
+    local backup_dir
+    backup_dir=$(create_backup)
+    
+    info "Creating project-specific LLM instruction files"
+    
+    # Remove existing files/symlinks if they exist
+    [[ -e "LLM_INSTRUCTIONS.md" ]] && rm -f "LLM_INSTRUCTIONS.md"
+    [[ -e "AGENTS.md" ]] && rm -f "AGENTS.md"
+    [[ -e "CLAUDE.md" ]] && rm -f "CLAUDE.md"
+    [[ -e "GEMINI.md" ]] && rm -f "GEMINI.md"
+    [[ -e ".github" ]] && rm -rf ".github"
+    [[ -e ".roo" ]] && rm -rf ".roo"
+    
+    # Create single project-specific file and symlink all LLM tools to it
+    cp "$DOTFILES_ROOT/project-templates/LLM_INSTRUCTIONS.md" "LLM_INSTRUCTIONS.md"
+    success "📝 Created LLM_INSTRUCTIONS.md"
+    
+    ln -s "LLM_INSTRUCTIONS.md" "AGENTS.md"
+    success "🔗 Linked AGENTS.md → LLM_INSTRUCTIONS.md"
+    
+    ln -s "LLM_INSTRUCTIONS.md" "CLAUDE.md"
+    success "🔗 Linked CLAUDE.md → LLM_INSTRUCTIONS.md"
+    
+    ln -s "LLM_INSTRUCTIONS.md" "GEMINI.md"
+    success "🔗 Linked GEMINI.md → LLM_INSTRUCTIONS.md"
+    
+    # Copy entire directory structures 
+    cp -r "$DOTFILES_ROOT/project-templates/github" ".github"
+    # Link to global instructions for tools that reference external files
+    rm ".github/copilot-instructions.md"
+    ln -s "$DOTFILES_ROOT/dotfiles/claude/CLAUDE.md" ".github/copilot-instructions.md"
+    success "📁 Copied .github/ directory structure"
+    
+    cp -r "$DOTFILES_ROOT/project-templates/roo" ".roo"
+    # Link to global instructions for tools that reference external files
+    rm ".roo/rules/00-general.md"
+    ln -s "$DOTFILES_ROOT/dotfiles/claude/CLAUDE.md" ".roo/rules/00-general.md"
+    success "📁 Copied .roo/ directory structure"
+    
+    info "Global LLM instructions managed by dotfiles install.sh"
+    info "Project-specific files created with TODO template for customization"
+}
+
+detach_llm_files() {
+    info "Detaching internal symlinks in LLM directories"
+    
+    local detached_files=()
+    
+    # Note: Individual LLM files (AGENTS.md, CLAUDE.md, GEMINI.md) are already independent copies
+    # Only detach internal symlinks in copied directories
+    
+    if [[ -L ".github/copilot-instructions.md" ]]; then
+        local target=$(readlink ".github/copilot-instructions.md")
+        rm ".github/copilot-instructions.md"
+        cp "$target" ".github/copilot-instructions.md"
+        detached_files+=(".github/copilot-instructions.md")
+    fi
+    
+    if [[ -L ".roo/rules/00-general.md" ]]; then
+        local target=$(readlink ".roo/rules/00-general.md")
+        rm ".roo/rules/00-general.md"
+        cp "$target" ".roo/rules/00-general.md"
+        detached_files+=(".roo/rules/00-general.md")
+    fi
+    
+    if [[ ${#detached_files[@]} -eq 0 ]]; then
+        info "No internal symlinks found to detach"
+        info "Main LLM instruction files are already independent project copies"
+    else
+        success "Detached internal symlinks: ${detached_files[*]}"
+        info "All LLM instruction files are now fully independent for customization"
+    fi
+}
+
+show_status() {
+    info "LLM instruction file status for: $PWD"
+    echo
+    
+    local main_files=("LLM_INSTRUCTIONS.md" "AGENTS.md" "CLAUDE.md" "GEMINI.md")
+    local internal_files=(".github/copilot-instructions.md" ".roo/rules/00-general.md")
+    local directories=(".github" ".roo")
+    
+    local symlinked=()
+    local copied=()
+    local missing=()
+    
+    # Check main LLM files (LLM_INSTRUCTIONS.md should be copied, others should be symlinks)
+    for file in "${main_files[@]}"; do
+        if [[ -L "$file" ]]; then
+            symlinked+=("$file")
+        elif [[ -e "$file" ]]; then
+            copied+=("$file")
+        else
+            missing+=("$file")
+        fi
+    done
+    
+    # Check directories (should be copied)
+    for dir in "${directories[@]}"; do
+        if [[ -d "$dir" ]]; then
+            copied+=("$dir/")
+        else
+            missing+=("$dir/")
+        fi
+    done
+    
+    # Check internal LLM instruction files
+    for file in "${internal_files[@]}"; do
+        if [[ -L "$file" ]]; then
+            symlinked+=("$file")
+        elif [[ -e "$file" ]]; then
+            copied+=("$file")
+        fi
+    done
+    
+    if [[ ${#symlinked[@]} -gt 0 ]]; then
+        echo "🔗 Symlinked (shared with dotfiles):"
+        for file in "${symlinked[@]}"; do
+            echo "   $file -> $(readlink "$file")"
+        done
+        echo
+    fi
+    
+    if [[ ${#copied[@]} -gt 0 ]]; then
+        echo "📁 Copied (independent):"
+        for file in "${copied[@]}"; do
+            echo "   $file"
+        done
+        echo
+    fi
+    
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo "❓ Missing:"
+        for file in "${missing[@]}"; do
+            echo "   $file"
+        done
+        echo
+    fi
+    
+    if [[ ${#symlinked[@]} -gt 0 ]]; then
+        info "Run '$SCRIPT_NAME --detach' to detach remaining internal symlinks"
+    elif [[ ${#missing[@]} -gt 0 ]]; then
+        info "Run '$SCRIPT_NAME' to create missing LLM instruction files"
+    else
+        info "Global instructions: ~/.config/opencode/AGENTS.md and ~/.claude/CLAUDE.md"
+        info "Project files ready for customization"
+    fi
+}
+
+main() {
+    case "${1:-}" in
+    "--detach")
+        detach_llm_files
+        ;;
+    "--status")
+        show_status
+        ;;
+    "--help" | "-h" | "help")
+        show_help
+        ;;
+    "")
+        link_llm_files
+        ;;
+    *)
+        error "Unknown option: $1. Use '$SCRIPT_NAME --help' for usage information."
+        ;;
+    esac
+}
+
+main "$@"

@@ -1,0 +1,450 @@
+#!/bin/bash
+set -euo pipefail
+
+# pbproject - Project initialization and management tool
+# Manages symlinked project templates from dotfiles
+
+# Global configuration
+# Auto-detect dotfiles root based on script location (resolve symlinks)
+SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+DOTFILES_ROOT="$(dirname "$SCRIPT_DIR")"
+SCRIPT_NAME="$(basename "$0")"
+PROJECTS_DIR="$HOME/Projects"
+
+show_help() {
+    cat <<EOF
+$SCRIPT_NAME - Project initialization and management tool
+
+USAGE:
+    $SCRIPT_NAME init <project-name> [project-path]
+    $SCRIPT_NAME detach [project-path]
+    $SCRIPT_NAME status [project-path]
+    $SCRIPT_NAME migrate <folder-name> [source-project-path]
+    $SCRIPT_NAME newghrepo [project-path]
+    $SCRIPT_NAME --help
+
+COMMANDS:
+    init       Create new project with symlinked base files
+    detach     Replace symlinks with actual copies for customization
+    status     Show which files are symlinked vs copied
+    migrate    Move a folder from existing project to new standalone project
+    newghrepo  Create private GitHub repository and push current project
+    --help     Show this help message
+
+ARGUMENTS:
+    project-name         Name for the new project directory
+    project-path         Path to project directory (defaults to current directory)
+    folder-name          Name of folder to migrate from source project
+    source-project-path  Path to source project containing folder (defaults to current directory)
+
+EXAMPLES:
+    $SCRIPT_NAME init my-app                    # Create ./my-app with base config
+    $SCRIPT_NAME init my-app ~/projects/my-app  # Create project at specific path
+    $SCRIPT_NAME detach                         # Detach current directory
+    $SCRIPT_NAME status                         # Check status of current directory
+    $SCRIPT_NAME migrate batch_writer           # Move ./batch_writer to new project
+    $SCRIPT_NAME migrate iso27kv2 ~/Projects/cli-tool  # Move folder from specific source
+    $SCRIPT_NAME newghrepo                      # Create GitHub repo for current project
+
+BASE FILES:
+    The following files/directories will be symlinked from dotfiles:
+    - AGENTS.md (OpenCode instructions)  
+    - CLAUDE.md (Claude Desktop instructions)
+    - GEMINI.md (Gemini CLI instructions)
+    - .github/copilot-instructions.md (GitHub Copilot instructions)
+    - .roo/rules/00-general.md (Roo general rules)
+
+TROUBLESHOOTING:
+    SSH Permission Denied when creating GitHub repository:
+    1. Check SSH key setup: ssh -T git@github.com
+    2. If needed, generate new SSH key: ssh-keygen -t ed25519 -C "your_email@example.com"
+    3. Add key to GitHub: gh ssh-key add ~/.ssh/id_ed25519.pub
+    4. Re-run: $SCRIPT_NAME newghrepo
+EOF
+}
+
+error() {
+    echo "❌ Error: $1" >&2
+    exit 1
+}
+
+info() {
+    echo "ℹ️  $1"
+}
+
+success() {
+    echo "✅ $1"
+}
+
+check_dotfiles() {
+    if [[ ! -d "$DOTFILES_ROOT" ]]; then
+        error "Dotfiles directory not found at $DOTFILES_ROOT"
+    fi
+
+    # Check for llm-link script
+    if [[ ! -f "$DOTFILES_ROOT/bin/llm-link" ]]; then
+        error "llm-link script not found at $DOTFILES_ROOT/bin/llm-link"
+    fi
+}
+
+init_project() {
+    local project_name="$1"
+    local project_path="${2:-$PWD/$project_name}"
+
+    if [[ -z "$project_name" ]]; then
+        error "Project name is required"
+    fi
+
+    check_dotfiles
+
+    info "Creating project directory: $project_path"
+    mkdir -p "$project_path"
+    cd "$project_path"
+
+    # Initialize git repository
+    if [[ ! -d ".git" ]]; then
+        info "Initializing git repository"
+        git init
+        success "Git repository initialized"
+    else
+        info "Git repository already exists"
+    fi
+
+    # Create symlinks to base files
+    info "Setting up LLM instructions and configuration"
+    
+    # Use llm-link to set up all LLM instruction files
+    if command -v llm-link &>/dev/null; then
+        llm-link
+        success "LLM instructions configured"
+    else
+        # Fallback to PATH if not found
+        if [[ -x "$DOTFILES_ROOT/bin/llm-link" ]]; then
+            "$DOTFILES_ROOT/bin/llm-link"
+            success "LLM instructions configured"
+        else
+            error "llm-link command not found and not executable at $DOTFILES_ROOT/bin/llm-link"
+        fi
+    fi
+
+    # Create basic project structure
+    if [[ ! -f "README.md" ]]; then
+        cat >"README.md" <<EOF
+# $project_name
+
+## Description
+TODO: Add project description
+
+## Usage
+TODO: Add usage instructions
+
+## Development
+TODO: Add development setup instructions
+EOF
+        success "Created README.md"
+    fi
+
+    # Add basic .gitignore if it doesn't exist
+    if [[ ! -f ".gitignore" ]]; then
+        cat >".gitignore" <<EOF
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+target/
+*.o
+*.so
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+EOF
+        success "Created .gitignore"
+    fi
+
+    success "Project '$project_name' initialized at $project_path"
+    info "Use '$SCRIPT_NAME detach' in the project directory when you need to customize base files"
+}
+
+detach_project() {
+    local project_path="${1:-$PWD}"
+    cd "$project_path"
+
+    if [[ ! -d ".git" ]]; then
+        error "Not in a git repository. Run this command in a project directory."
+    fi
+
+    info "Detaching symlinked files in $project_path"
+
+    # Use llm-link to detach LLM instruction files
+    if command -v llm-link &>/dev/null; then
+        llm-link --detach
+    else
+        # Fallback to PATH if not found
+        if [[ -x "$DOTFILES_ROOT/bin/llm-link" ]]; then
+            "$DOTFILES_ROOT/bin/llm-link" --detach
+        else
+            error "llm-link command not found and not executable at $DOTFILES_ROOT/bin/llm-link"
+        fi
+    fi
+}
+
+show_status() {
+    local project_path="${1:-$PWD}"
+    cd "$project_path"
+
+    if [[ ! -d ".git" ]]; then
+        error "Not in a git repository. Run this command in a project directory."
+    fi
+
+    info "Project status for: $project_path"
+    echo
+
+    # Use llm-link to show LLM file status
+    if command -v llm-link &>/dev/null; then
+        llm-link --status
+    else
+        # Fallback to PATH if not found
+        if [[ -x "$DOTFILES_ROOT/bin/llm-link" ]]; then
+            "$DOTFILES_ROOT/bin/llm-link" --status
+        else
+            error "llm-link command not found and not executable at $DOTFILES_ROOT/bin/llm-link"
+        fi
+    fi
+}
+
+migrate_folder() {
+    local folder_name="$1"
+    local source_path="${2:-$PWD}"
+
+    if [[ -z "$folder_name" ]]; then
+        error "Folder name is required"
+    fi
+
+    # Normalize source path
+    source_path=$(realpath "$source_path")
+    local source_folder="$source_path/$folder_name"
+
+    if [[ ! -d "$source_folder" ]]; then
+        error "Folder '$folder_name' not found in '$source_path'"
+    fi
+
+    # Check for git repository in source
+    if [[ ! -d "$source_path/.git" ]]; then
+        error "Source path '$source_path' is not a git repository"
+    fi
+
+    # Create new project directory in ~/Projects/
+    local new_project_path="$PROJECTS_DIR/$folder_name"
+
+    if [[ -e "$new_project_path" ]]; then
+        error "Directory '$new_project_path' already exists"
+    fi
+
+    info "Migrating folder '$folder_name' from '$source_path' to '$new_project_path'"
+
+    # Ensure Projects directory exists
+    mkdir -p "$PROJECTS_DIR"
+
+    # Initialize new project
+    init_project "$folder_name" "$new_project_path"
+
+    # Copy folder contents to new project
+    info "Copying folder contents to new project"
+    cp -r "$source_folder"/* "$new_project_path/" 2>/dev/null || true
+    cp -r "$source_folder"/.[^.]* "$new_project_path/" 2>/dev/null || true
+
+    # Add and commit files
+    cd "$new_project_path"
+    git add .
+    git commit -m "Initial commit - migrated from $source_path/$folder_name"
+
+    # Create GitHub repository and push
+    info "Creating GitHub repository"
+    create_github_repo "$new_project_path"
+
+    # Copy repository URL to clipboard
+    local username=$(gh api user --jq .login 2>/dev/null || echo "unknown")
+    local repo_url="https://github.com/$username/$folder_name"
+
+    if command -v wl-copy &>/dev/null; then
+        echo "$repo_url" | wl-copy
+        success "Repository URL copied to clipboard: $repo_url"
+    elif command -v xclip &>/dev/null; then
+        echo "$repo_url" | xclip -selection clipboard
+        success "Repository URL copied to clipboard: $repo_url"
+    else
+        success "Repository URL: $repo_url"
+        info "Install wl-copy or xclip to auto-copy URLs to clipboard"
+    fi
+
+    # Remove original folder from source project
+    info "Removing original folder from source project"
+    cd "$source_path"
+    rm -rf "$folder_name"
+    git add "$folder_name"
+    if git diff --staged --quiet; then
+        info "No changes to commit in source project"
+    else
+        git commit -m "Remove $folder_name - migrated to standalone project
+
+Folder has been extracted to: $new_project_path
+GitHub repository: $repo_url"
+        success "Committed removal of $folder_name from source project"
+    fi
+
+    success "Successfully migrated '$folder_name' to '$new_project_path'"
+    info "Original folder removed from source project"
+    info "New project location: $new_project_path"
+}
+
+create_github_repo() {
+    local project_path="${1:-$PWD}"
+    cd "$project_path"
+
+    if [[ ! -d ".git" ]]; then
+        error "Not in a git repository. Run this command in a project directory."
+    fi
+
+    # Check if gh CLI is installed
+    if ! command -v gh &>/dev/null; then
+        error "GitHub CLI (gh) is not installed. Install it with: dnf install gh"
+    fi
+
+    # Check if user is authenticated
+    if ! gh auth status &>/dev/null; then
+        error "Not authenticated with GitHub. Run: gh auth login"
+    fi
+
+    # Get project name from directory
+    local project_name=$(basename "$project_path")
+
+    # Get current remote origin
+    local current_remote=""
+    if git remote get-url origin &>/dev/null; then
+        current_remote=$(git remote get-url origin)
+        info "Current remote origin: $current_remote"
+
+        if [[ "$current_remote" == *"github.com"* ]]; then
+            # Check if this is our expected repository
+            local username=$(gh api user --jq .login)
+            local expected_remote="git@github.com:$username/$project_name.git"
+            local expected_https="https://github.com/$username/$project_name.git"
+
+            if [[ "$current_remote" == "$expected_remote" ]] || [[ "$current_remote" == "$expected_https" ]]; then
+                info "GitHub repository already configured correctly"
+                # Try to push if there are unpushed commits
+                if git log origin/$(git branch --show-current) 2>/dev/null; then
+                    info "Repository is up to date"
+                else
+                    info "Attempting to push unpushed commits"
+                    if git push origin $(git branch --show-current); then
+                        success "Successfully pushed to existing repository"
+                    else
+                        error "Failed to push to existing repository. Check SSH keys or run manually: git push origin $(git branch --show-current)"
+                    fi
+                fi
+                return
+            else
+                info "Different GitHub repository already configured: $current_remote"
+                return
+            fi
+        fi
+    fi
+
+    # Check if repository already exists on GitHub
+    local username=$(gh api user --jq .login)
+    if gh repo view "$username/$project_name" &>/dev/null; then
+        info "Repository $username/$project_name already exists on GitHub"
+
+        # Add remote if not already configured
+        if [[ -z "$current_remote" ]]; then
+            info "Adding remote origin"
+            git remote add origin "git@github.com:$username/$project_name.git"
+            success "Added remote origin"
+        fi
+
+        # Try to push
+        info "Attempting to push to existing repository"
+        if git push -u origin $(git branch --show-current); then
+            success "Successfully pushed to existing repository"
+            success "Repository URL: https://github.com/$username/$project_name"
+        else
+            error "Failed to push to repository. Check SSH keys or run manually: git push -u origin $(git branch --show-current)"
+        fi
+        return
+    fi
+
+    info "Creating private GitHub repository: $project_name"
+
+    # Create GitHub repository without immediate push
+    if gh repo create "$project_name" --private --source=. --remote=origin; then
+        success "GitHub repository created successfully"
+
+        # Try to push separately so we can handle failures gracefully
+        info "Pushing code to repository"
+        if git push -u origin $(git branch --show-current); then
+            success "Code pushed successfully"
+            success "Repository URL: https://github.com/$username/$project_name"
+        else
+            info "Repository created but push failed"
+            info "You can push manually later with: git push -u origin $(git branch --show-current)"
+            info "Check your SSH keys: ssh -T git@github.com"
+            success "Repository URL: https://github.com/$username/$project_name"
+        fi
+    else
+        error "Failed to create GitHub repository"
+    fi
+}
+
+main() {
+    case "${1:-}" in
+    "init")
+        shift
+        init_project "$@"
+        ;;
+    "detach")
+        shift
+        detach_project "$@"
+        ;;
+    "status")
+        shift
+        show_status "$@"
+        ;;
+    "migrate")
+        shift
+        migrate_folder "$@"
+        ;;
+    "newghrepo")
+        shift
+        create_github_repo "$@"
+        ;;
+    "--help" | "-h" | "help")
+        show_help
+        ;;
+    "")
+        error "No command specified. Use '$SCRIPT_NAME --help' for usage information."
+        ;;
+    *)
+        error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage information."
+        ;;
+    esac
+}
+
+main "$@"
