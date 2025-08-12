@@ -132,24 +132,24 @@ setup_llm_files() {
     cp "$PBPROJECT_ROOT/project-templates/LLM_INSTRUCTIONS.md" "LLM_INSTRUCTIONS.md"
     success "📝 Created LLM_INSTRUCTIONS.md (template with TODO items)"
     
-    # Create independent copies for all AI tools
-    cp "LLM_INSTRUCTIONS.md" "AGENTS.md"
-    success "📄 Created AGENTS.md (OpenCode instructions)"
+    # Create symlinks for all AI tools
+    ln -sf "LLM_INSTRUCTIONS.md" "AGENTS.md"
+    success "📄 Created AGENTS.md (symlink to LLM_INSTRUCTIONS.md)"
     
-    cp "LLM_INSTRUCTIONS.md" "CLAUDE.md"
-    success "📄 Created CLAUDE.md (Claude Desktop instructions)"
+    ln -sf "LLM_INSTRUCTIONS.md" "CLAUDE.md"
+    success "📄 Created CLAUDE.md (symlink to LLM_INSTRUCTIONS.md)"
     
-    cp "LLM_INSTRUCTIONS.md" "GEMINI.md"
-    success "📄 Created GEMINI.md (Gemini CLI instructions)"
+    ln -sf "LLM_INSTRUCTIONS.md" "GEMINI.md"
+    success "📄 Created GEMINI.md (symlink to LLM_INSTRUCTIONS.md)"
     
-    # Copy directory structures and create independent instruction files
+    # Copy directory structures and create symlinks for instruction files
     cp -r "$PBPROJECT_ROOT/project-templates/github" ".github"
-    cp "LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
-    success "📁 Created .github/ with independent copilot-instructions.md"
+    ln -sf "../LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
+    success "📁 Created .github/ with symlinked copilot-instructions.md"
     
     cp -r "$PBPROJECT_ROOT/project-templates/roo" ".roo"
-    cp "LLM_INSTRUCTIONS.md" ".roo/rules/00-general.md"
-    success "📁 Created .roo/ with independent rules/00-general.md"
+    ln -sf "../LLM_INSTRUCTIONS.md" ".roo/rules/00-general.md"
+    success "📁 Created .roo/ with symlinked rules/00-general.md"
     
     echo
     info "🚀 Next steps:"
@@ -157,7 +157,7 @@ setup_llm_files() {
     echo "   2. Tell it: 'Follow the LLM_INSTRUCTIONS.md setup process'"
     echo "   3. The AI will analyze your project and customize all instruction files"
     echo
-    info "All instruction files are independent copies - customize as needed!"
+    info "All AI tool configs are symlinked to LLM_INSTRUCTIONS.md - edit one file to update all!"
 }
 
 show_status() {

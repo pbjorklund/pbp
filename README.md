@@ -41,7 +41,7 @@ pbproject migrate useful_script
 Set up AI files in existing project:
 ```bash
 llm-setup
-# Creates LLM_INSTRUCTIONS.md and copies CLAUDE.md, AGENTS.md, etc. from it
+# Creates LLM_INSTRUCTIONS.md and symlinks CLAUDE.md, AGENTS.md, etc. to it
 ```
 
 That's it.

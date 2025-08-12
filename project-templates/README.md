@@ -22,7 +22,7 @@ When you run `llm-setup` in a project directory, it will:
 - **Single source of truth**: All AI tools read from the same `LLM_INSTRUCTIONS.md` file
 - **Easy customization**: Edit one file to update instructions for all AI tools
 - **Project-specific**: Each project gets its own copy of the template to customize
-- **Independent copies**: Creates independent copies of instruction files, not symlinks
-- **Easy updates**: Each project can customize its AI instructions without affecting templates
+- **Centralized updates**: All AI tool configs are symlinked to one LLM_INSTRUCTIONS.md file
+- **Project-specific**: Each project gets its own copy of LLM_INSTRUCTIONS.md to customize
 
 The actual instruction files are created by the `llm-setup` script, not stored as templates.
