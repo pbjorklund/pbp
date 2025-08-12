@@ -48,12 +48,11 @@ EXAMPLES:
     $SCRIPT_NAME newghrepo                      # Create GitHub repo for current project
 
 BASE FILES:
-    The following files/directories will be created from pbproject templates:
-    - AGENTS.md (OpenCode instructions)  
-    - CLAUDE.md (Claude Desktop instructions)
-    - GEMINI.md (Gemini CLI instructions)
-    - .github/copilot-instructions.md (GitHub Copilot instructions)
-    - .roo/rules/00-general.md (Roo general rules)
+    The following files will be created from pbproject templates:
+    - LLM_INSTRUCTIONS.md (Main instruction file)
+    - AGENTS.md (OpenCode instructions - symlinked)
+    - CLAUDE.md (Claude Desktop instructions - symlinked)
+    - GEMINI.md (Gemini CLI instructions - symlinked)
 
 TROUBLESHOOTING:
     SSH Permission Denied when creating GitHub repository:

@@ -29,11 +29,12 @@ DESCRIPTION:
     directory. Existing files are backed up to /tmp before being replaced.
 
     Files managed:
-    - AGENTS.md (OpenCode instructions)
-    - CLAUDE.md (Claude Desktop instructions)
-    - GEMINI.md (Gemini CLI instructions)
-    - .github/ (GitHub Copilot and workflows)
-    - .roo/ (Roo configuration and rules)
+    - LLM_INSTRUCTIONS.md (Main instruction file)
+    - AGENTS.md (OpenCode instructions - symlinked)
+    - CLAUDE.md (Claude Desktop instructions - symlinked)
+    - GEMINI.md (Gemini CLI instructions - symlinked)
+    - .github/copilot-instructions.md (GitHub Copilot - symlinked)
+    - .roo/rules/00-general.md (Roo general rules - symlinked)
 
 EXAMPLES:
     $SCRIPT_NAME                    # Link all LLM files
@@ -66,7 +67,6 @@ check_pbproject() {
 
     local missing_files=()
     [[ ! -f "$PBPROJECT_ROOT/project-templates/LLM_INSTRUCTIONS.md" ]] && missing_files+=("LLM_INSTRUCTIONS.md")
-    [[ ! -f "$PBPROJECT_ROOT/dotfiles/claude/CLAUDE.md" ]] && missing_files+=("claude/CLAUDE.md")
     [[ ! -d "$PBPROJECT_ROOT/project-templates/github" ]] && missing_files+=("github/")
     [[ ! -d "$PBPROJECT_ROOT/project-templates/roo" ]] && missing_files+=("roo/")
 
@@ -80,6 +80,7 @@ create_backup() {
     local files_to_backup=()
     
     # Check which files exist and need backup
+    [[ -e "LLM_INSTRUCTIONS.md" ]] && files_to_backup+=("LLM_INSTRUCTIONS.md")
     [[ -e "AGENTS.md" ]] && files_to_backup+=("AGENTS.md")
     [[ -e "CLAUDE.md" ]] && files_to_backup+=("CLAUDE.md")
     [[ -e "GEMINI.md" ]] && files_to_backup+=("GEMINI.md")
@@ -95,7 +96,6 @@ create_backup() {
     
     for file in "${files_to_backup[@]}"; do
         if [[ -f "$file" ]]; then
-            mkdir -p "$backup_dir/$(dirname "$file")"
             cp "$file" "$backup_dir/$file"
         elif [[ -d "$file" ]]; then
             mkdir -p "$backup_dir/$(dirname "$file")"
@@ -136,51 +136,60 @@ link_llm_files() {
     ln -s "LLM_INSTRUCTIONS.md" "GEMINI.md"
     success "🔗 Linked GEMINI.md → LLM_INSTRUCTIONS.md"
     
-    # Copy entire directory structures 
+    # Copy directory structures and create internal symlinks
     cp -r "$PBPROJECT_ROOT/project-templates/github" ".github"
-    # Link to global instructions for tools that reference external files
-    rm ".github/copilot-instructions.md"
-    ln -s "$PBPROJECT_ROOT/dotfiles/claude/CLAUDE.md" ".github/copilot-instructions.md"
-    success "📁 Copied .github/ directory structure"
+    ln -s "../LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
+    success "📁 Created .github/ with copilot-instructions.md → ../LLM_INSTRUCTIONS.md"
     
     cp -r "$PBPROJECT_ROOT/project-templates/roo" ".roo"
-    # Link to global instructions for tools that reference external files
-    rm ".roo/rules/00-general.md"
-    ln -s "$PBPROJECT_ROOT/dotfiles/claude/CLAUDE.md" ".roo/rules/00-general.md"
-    success "📁 Copied .roo/ directory structure"
+    ln -s "../../LLM_INSTRUCTIONS.md" ".roo/rules/00-general.md"
+    success "📁 Created .roo/ with rules/00-general.md → ../../LLM_INSTRUCTIONS.md"
     
-    info "Global LLM instructions managed by pbproject"
-    info "Project-specific files created with TODO template for customization"
+    info "LLM instruction files and directories ready for customization"
 }
 
 detach_llm_files() {
-    info "Detaching internal symlinks in LLM directories"
+    info "Converting symlinked LLM files to independent copies"
     
     local detached_files=()
     
-    # Note: Individual LLM files (AGENTS.md, CLAUDE.md, GEMINI.md) are already independent copies
-    # Only detach internal symlinks in copied directories
+    # Convert main LLM file symlinks to independent copies
+    if [[ -L "AGENTS.md" ]]; then
+        rm "AGENTS.md"
+        cp "LLM_INSTRUCTIONS.md" "AGENTS.md"
+        detached_files+=("AGENTS.md")
+    fi
     
+    if [[ -L "CLAUDE.md" ]]; then
+        rm "CLAUDE.md"
+        cp "LLM_INSTRUCTIONS.md" "CLAUDE.md"
+        detached_files+=("CLAUDE.md")
+    fi
+    
+    if [[ -L "GEMINI.md" ]]; then
+        rm "GEMINI.md"
+        cp "LLM_INSTRUCTIONS.md" "GEMINI.md"
+        detached_files+=("GEMINI.md")
+    fi
+    
+    # Convert internal directory symlinks to independent copies
     if [[ -L ".github/copilot-instructions.md" ]]; then
-        local target=$(readlink ".github/copilot-instructions.md")
         rm ".github/copilot-instructions.md"
-        cp "$target" ".github/copilot-instructions.md"
+        cp "LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
         detached_files+=(".github/copilot-instructions.md")
     fi
     
     if [[ -L ".roo/rules/00-general.md" ]]; then
-        local target=$(readlink ".roo/rules/00-general.md")
         rm ".roo/rules/00-general.md"
-        cp "$target" ".roo/rules/00-general.md"
+        cp "LLM_INSTRUCTIONS.md" ".roo/rules/00-general.md"
         detached_files+=(".roo/rules/00-general.md")
     fi
     
     if [[ ${#detached_files[@]} -eq 0 ]]; then
-        info "No internal symlinks found to detach"
-        info "Main LLM instruction files are already independent project copies"
+        info "No symlinked files found to detach"
     else
-        success "Detached internal symlinks: ${detached_files[*]}"
-        info "All LLM instruction files are now fully independent for customization"
+        success "Detached symlinks to independent copies: ${detached_files[*]}"
+        info "All LLM instruction files are now independent for customization"
     fi
 }
 
@@ -226,7 +235,7 @@ show_status() {
     done
     
     if [[ ${#symlinked[@]} -gt 0 ]]; then
-        echo "🔗 Symlinked (shared with dotfiles):"
+        echo "🔗 Symlinked (shared):"
         for file in "${symlinked[@]}"; do
             echo "   $file -> $(readlink "$file")"
         done
@@ -234,7 +243,7 @@ show_status() {
     fi
     
     if [[ ${#copied[@]} -gt 0 ]]; then
-        echo "📁 Copied (independent):"
+        echo "📁 Independent copies:"
         for file in "${copied[@]}"; do
             echo "   $file"
         done
@@ -250,12 +259,11 @@ show_status() {
     fi
     
     if [[ ${#symlinked[@]} -gt 0 ]]; then
-        info "Run '$SCRIPT_NAME --detach' to detach remaining internal symlinks"
+        info "Run '$SCRIPT_NAME --detach' to convert symlinks to independent copies"
     elif [[ ${#missing[@]} -gt 0 ]]; then
         info "Run '$SCRIPT_NAME' to create missing LLM instruction files"
     else
-        info "Global instructions: ~/.config/opencode/AGENTS.md and ~/.claude/CLAUDE.md"
-        info "Project files ready for customization"
+        info "All files are independent copies, ready for project-specific customization"
     fi
 }
 
