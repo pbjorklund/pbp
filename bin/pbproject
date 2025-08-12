@@ -97,7 +97,7 @@ check_pbproject() {
 }
 
 init_project() {
-    local project_name="$1"
+    local project_name="${1:-}"
     local project_path="${2:-$PWD/$project_name}"
 
     if [[ -z "$project_name" ]]; then
@@ -226,7 +226,7 @@ show_status() {
 }
 
 migrate_folder() {
-    local folder_name="$1"
+    local folder_name="${1:-}"
     local source_path="${2:-$PWD}"
 
     if [[ -z "$folder_name" ]]; then
