@@ -1,10 +1,10 @@
 # pbproject Templates
 
-This directory contains template files used by `pbproject` and `llm-link` to bootstrap new projects.
+This directory contains template files used by `pbproject` and `llm-setup` to bootstrap new projects.
 
-## Files Created by `llm-link`
+## Files Created by `llm-setup`
 
-When you run `llm-link` in a project directory, it will:
+When you run `llm-setup` in a project directory, it will:
 
 1. **Copy** `LLM_INSTRUCTIONS.md` as the main instruction file
 2. **Create symlinks** for all AI tools that point to `LLM_INSTRUCTIONS.md`:
@@ -22,17 +22,7 @@ When you run `llm-link` in a project directory, it will:
 - **Single source of truth**: All AI tools read from the same `LLM_INSTRUCTIONS.md` file
 - **Easy customization**: Edit one file to update instructions for all AI tools
 - **Project-specific**: Each project gets its own copy of the template to customize
-- **Detachable**: Use `llm-link --detach` to convert symlinks to independent copies when needed
+- **Independent copies**: Creates independent copies of instruction files, not symlinks
+- **Easy updates**: Each project can customize its AI instructions without affecting templates
 
-## Template Structure
-
-```
-project-templates/
-├── README.md                    # This file
-├── LLM_INSTRUCTIONS.md         # Main template with project analysis TODOs and anti-sycophancy rules
-├── github/                     # GitHub Copilot directory structure
-└── roo/                        # Roo directory structure
-    └── rules/
-```
-
-The actual instruction files are created by the `llm-link` script, not stored as templates.
+The actual instruction files are created by the `llm-setup` script, not stored as templates.

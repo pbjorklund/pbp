@@ -10,10 +10,9 @@ CLI tools for project management and AI assistant configuration.
 - `pbproject newghrepo` - Create GitHub repo for current project
 - `pbproject status/detach` - Manage project configuration
 
-**llm-link**: Manages AI instruction files  
-- `llm-link` - Set up AI instruction files (CLAUDE.md, AGENTS.md, etc.)
-- `llm-link --status` - Show which files are linked vs copied
-- `llm-link --detach` - Convert symlinks to independent copies
+**llm-setup**: Manages AI instruction files  
+- `llm-setup` - Set up AI instruction files (CLAUDE.md, AGENTS.md, etc.)
+- `llm-setup --status` - Show which files are present/missing
 
 ## Installation
 
@@ -41,8 +40,8 @@ pbproject migrate useful_script
 
 Set up AI files in existing project:
 ```bash
-llm-link
-# Creates LLM_INSTRUCTIONS.md and symlinks CLAUDE.md, AGENTS.md, etc. to it
+llm-setup
+# Creates LLM_INSTRUCTIONS.md and copies CLAUDE.md, AGENTS.md, etc. from it
 ```
 
 That's it.

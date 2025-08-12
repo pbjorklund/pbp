@@ -71,9 +71,10 @@ main() {
     # Create symlinks
     info "Creating symlinks in $bin_dir"
 
-    # Remove existing symlinks or files if they exist
+    # Remove existing symlinks (including old llm-link)
     [[ -L "$bin_dir/pbproject" ]] && rm "$bin_dir/pbproject"
     [[ -L "$bin_dir/llm-setup" ]] && rm "$bin_dir/llm-setup"
+    [[ -L "$bin_dir/llm-link" ]] && rm "$bin_dir/llm-link" && info "Removed old llm-link symlink"
 
     # Check for existing non-symlink files
     if [[ -f "$bin_dir/pbproject" ]] && [[ ! -L "$bin_dir/pbproject" ]]; then
@@ -82,6 +83,11 @@ main() {
 
     if [[ -f "$bin_dir/llm-setup" ]] && [[ ! -L "$bin_dir/llm-setup" ]]; then
         error "File $bin_dir/llm-setup already exists and is not a symlink. Remove it manually first."
+    fi
+
+    if [[ -f "$bin_dir/llm-link" ]] && [[ ! -L "$bin_dir/llm-link" ]]; then
+        info "Warning: Found old llm-link file (not symlink) at $bin_dir/llm-link"
+        info "Please remove it manually: rm $bin_dir/llm-link"
     fi
 
     # Create the symlinks
