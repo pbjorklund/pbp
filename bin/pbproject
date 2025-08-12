@@ -25,9 +25,9 @@ USAGE:
     $SCRIPT_NAME --help
 
 COMMANDS:
-    init       Create new project with symlinked base files
-    detach     Replace symlinks with actual copies for customization
-    status     Show which files are symlinked vs copied
+    init       Create new project with basic structure
+    detach     (Deprecated - llm-setup creates independent copies by default)
+    status     Show project status and LLM instruction file status
     migrate    Move a folder from existing project to new standalone project
     newghrepo  Create private GitHub repository and push current project
     --help     Show this help message
@@ -39,20 +39,24 @@ ARGUMENTS:
     source-project-path  Path to source project containing folder (defaults to current directory)
 
 EXAMPLES:
-    $SCRIPT_NAME init my-app                    # Create ./my-app with base config
+    $SCRIPT_NAME init my-app                    # Create ./my-app with basic structure
     $SCRIPT_NAME init my-app ~/projects/my-app  # Create project at specific path
-    $SCRIPT_NAME detach                         # Detach current directory
-    $SCRIPT_NAME status                         # Check status of current directory
+    $SCRIPT_NAME status                         # Check project and LLM instruction status
     $SCRIPT_NAME migrate batch_writer           # Move ./batch_writer to new project
     $SCRIPT_NAME migrate iso27kv2 ~/Projects/cli-tool  # Move folder from specific source
     $SCRIPT_NAME newghrepo                      # Create GitHub repo for current project
+    
+LLM SETUP:
+    After creating a project, run 'llm-setup' to add AI development support
 
 BASE FILES:
-    The following files will be created from pbproject templates:
-    - LLM_INSTRUCTIONS.md (Main instruction file)
-    - AGENTS.md (OpenCode instructions - symlinked)
-    - CLAUDE.md (Claude Desktop instructions - symlinked)
-    - GEMINI.md (Gemini CLI instructions - symlinked)
+    pbproject init creates a basic project structure:
+    - README.md (Basic project documentation)
+    - .gitignore (Common ignore patterns)
+    
+    LLM INSTRUCTIONS:
+    For AI development support, run 'llm-setup' in the project directory.
+    This creates customizable instruction files for AI assistants.
 
 TROUBLESHOOTING:
     SSH Permission Denied when creating GitHub repository:
@@ -81,9 +85,9 @@ check_pbproject() {
         error "pbproject directory not found at $PBPROJECT_ROOT"
     fi
 
-    # Check for llm-link script
-    if [[ ! -f "$PBPROJECT_ROOT/bin/llm-link" ]]; then
-        error "llm-link script not found at $PBPROJECT_ROOT/bin/llm-link"
+    # Check for llm-setup script
+    if [[ ! -f "$PBPROJECT_ROOT/bin/llm-setup" ]]; then
+        error "llm-setup script not found at $PBPROJECT_ROOT/bin/llm-setup"
     fi
 
     # Check for project templates
@@ -115,22 +119,8 @@ init_project() {
         info "Git repository already exists"
     fi
 
-    # Create symlinks to base files
-    info "Setting up LLM instructions and configuration"
-    
-    # Use llm-link to set up all LLM instruction files
-    if command -v llm-link &>/dev/null; then
-        llm-link
-        success "LLM instructions configured"
-    else
-        # Fallback to PATH if not found
-        if [[ -x "$PBPROJECT_ROOT/bin/llm-link" ]]; then
-            "$PBPROJECT_ROOT/bin/llm-link"
-            success "LLM instructions configured"
-        else
-            error "llm-link command not found and not executable at $PBPROJECT_ROOT/bin/llm-link"
-        fi
-    fi
+    # Basic project setup complete
+    info "Basic project structure created"
 
     # Create basic project structure
     if [[ ! -f "README.md" ]]; then
@@ -183,7 +173,11 @@ EOF
     fi
 
     success "Project '$project_name' initialized at $project_path"
-    info "Use '$SCRIPT_NAME detach' in the project directory when you need to customize base files"
+    echo
+    info "🚀 Next steps:"
+    echo "   1. cd $project_path"
+    echo "   2. Add your code and documentation"
+    echo "   3. When ready for AI development support, run: llm-setup"
 }
 
 detach_project() {
@@ -196,17 +190,9 @@ detach_project() {
 
     info "Detaching symlinked files in $project_path"
 
-    # Use llm-link to detach LLM instruction files
-    if command -v llm-link &>/dev/null; then
-        llm-link --detach
-    else
-        # Fallback to PATH if not found
-        if [[ -x "$PBPROJECT_ROOT/bin/llm-link" ]]; then
-            "$PBPROJECT_ROOT/bin/llm-link" --detach
-        else
-            error "llm-link command not found and not executable at $PBPROJECT_ROOT/bin/llm-link"
-        fi
-    fi
+    info "Note: 'pbproject detach' is no longer needed"
+    info "llm-setup now creates independent copies by default"
+    info "Run 'llm-setup --status' to check LLM instruction files"
 }
 
 show_status() {
@@ -220,15 +206,21 @@ show_status() {
     info "Project status for: $project_path"
     echo
 
-    # Use llm-link to show LLM file status
-    if command -v llm-link &>/dev/null; then
-        llm-link --status
+    # Show basic project info
+    echo "📁 Project: $(basename "$project_path")"
+    echo "📂 Path: $project_path"
+    echo
+    
+    # Use llm-setup to show LLM file status
+    if command -v llm-setup &>/dev/null; then
+        llm-setup --status
     else
         # Fallback to PATH if not found
-        if [[ -x "$PBPROJECT_ROOT/bin/llm-link" ]]; then
-            "$PBPROJECT_ROOT/bin/llm-link" --status
+        if [[ -x "$PBPROJECT_ROOT/bin/llm-setup" ]]; then
+            "$PBPROJECT_ROOT/bin/llm-setup" --status
         else
-            error "llm-link command not found and not executable at $PBPROJECT_ROOT/bin/llm-link"
+            info "llm-setup not found - LLM instruction files not configured"
+            info "Run 'llm-setup' to add AI development support"
         fi
     fi
 }
