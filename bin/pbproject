@@ -18,7 +18,6 @@ $SCRIPT_NAME - Project initialization and management tool
 
 USAGE:
     $SCRIPT_NAME init <project-name> [project-path]
-    $SCRIPT_NAME detach [project-path]
     $SCRIPT_NAME status [project-path]
     $SCRIPT_NAME migrate <folder-name> [source-project-path]
     $SCRIPT_NAME newghrepo [project-path]
@@ -26,7 +25,6 @@ USAGE:
 
 COMMANDS:
     init       Create new project with basic structure
-    detach     (Deprecated - llm-setup creates independent copies by default)
     status     Show project status and LLM instruction file status
     migrate    Move a folder from existing project to new standalone project
     newghrepo  Create private GitHub repository and push current project
@@ -169,20 +167,7 @@ Examples:
     echo "   • pbproject migrate   - Extract subfolder to new repo"
 }
 
-detach_project() {
-    local project_path="${1:-$PWD}"
-    cd "$project_path"
 
-    if [[ ! -d ".git" ]]; then
-        error "Not in a git repository. Run this command in a project directory."
-    fi
-
-    info "Detaching symlinked files in $project_path"
-
-    info "Note: 'pbproject detach' is no longer needed"
-    info "llm-setup now creates independent copies by default"
-    info "Run 'llm-setup --status' to check LLM instruction files"
-}
 
 show_status() {
     local project_path="${1:-$PWD}"
@@ -200,7 +185,103 @@ show_status() {
     echo "📂 Path: $project_path"
     echo
     
+    # Show git status
+    echo "🔀 Git Information:"
+    local current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+    echo "   Branch: $current_branch"
+    
+    # Check for uncommitted changes
+    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+        echo "   Status: ⚠️  Uncommitted changes"
+    else
+        echo "   Status: ✅ Clean working directory"
+    fi
+    
+    # Show remote information
+    if git remote get-url origin &>/dev/null; then
+        local remote_url=$(git remote get-url origin)
+        echo "   Remote: $remote_url"
+        
+        # Check if it's a GitHub repository
+        if [[ "$remote_url" == *"github.com"* ]]; then
+            echo
+            echo "🐙 GitHub Repository:"
+            
+            # Extract repo info from URL
+            local repo_info=""
+            if [[ "$remote_url" == *"git@github.com:"* ]]; then
+                repo_info=$(echo "$remote_url" | sed 's/git@github.com://' | sed 's/\.git$//')
+            elif [[ "$remote_url" == *"https://github.com/"* ]]; then
+                repo_info=$(echo "$remote_url" | sed 's|https://github.com/||' | sed 's/\.git$//')
+            fi
+            
+            if [[ -n "$repo_info" ]] && command -v gh &>/dev/null; then
+                echo "   Repository: https://github.com/$repo_info"
+                
+                # Check if repo exists and is accessible
+                if gh repo view "$repo_info" &>/dev/null; then
+                    local visibility=$(gh repo view "$repo_info" --json visibility --jq .visibility 2>/dev/null || echo "unknown")
+                    echo "   Visibility: $visibility"
+                    
+                    # Check if local is ahead/behind remote
+                    if git fetch origin &>/dev/null; then
+                        local ahead=$(git rev-list --count HEAD..origin/$current_branch 2>/dev/null || echo "0")
+                        local behind=$(git rev-list --count origin/$current_branch..HEAD 2>/dev/null || echo "0")
+                        
+                        if [[ "$ahead" -gt 0 ]] && [[ "$behind" -gt 0 ]]; then
+                            echo "   Sync: ⚠️  $behind ahead, $ahead behind"
+                        elif [[ "$behind" -gt 0 ]]; then
+                            echo "   Sync: ⬆️  $behind commits ahead"
+                        elif [[ "$ahead" -gt 0 ]]; then
+                            echo "   Sync: ⬇️  $ahead commits behind"
+                        else
+                            echo "   Sync: ✅ Up to date"
+                        fi
+                    fi
+                else
+                    echo "   Status: ❌ Repository not accessible or doesn't exist"
+                fi
+            else
+                echo "   Repository: $repo_info (GitHub CLI not available for detailed info)"
+            fi
+        fi
+    else
+        echo "   Remote: ❌ No remote configured"
+        echo
+        echo "💡 To create GitHub repository: pbproject newghrepo"
+    fi
+    
+    echo
+    
+    # Show project structure
+    echo "📋 Project Structure:"
+    if [[ -f "README.md" ]]; then
+        echo "   ✅ README.md"
+    else
+        echo "   ❌ README.md missing"
+    fi
+    
+    if [[ -f ".gitignore" ]]; then
+        echo "   ✅ .gitignore"
+    else
+        echo "   ❌ .gitignore missing"
+    fi
+    
+    # Check for common project files
+    if [[ -f "package.json" ]]; then
+        echo "   📦 package.json (Node.js project)"
+    elif [[ -f "Cargo.toml" ]]; then
+        echo "   🦀 Cargo.toml (Rust project)"
+    elif [[ -f "pyproject.toml" ]] || [[ -f "requirements.txt" ]]; then
+        echo "   🐍 Python project"
+    elif [[ -f "go.mod" ]]; then
+        echo "   🐹 go.mod (Go project)"
+    fi
+    
+    echo
+    
     # Use llm-setup to show LLM file status
+    echo "🤖 AI Development Support:"
     if command -v llm-setup &>/dev/null; then
         llm-setup --status
     else
@@ -208,8 +289,8 @@ show_status() {
         if [[ -x "$PBPROJECT_ROOT/bin/llm-setup" ]]; then
             "$PBPROJECT_ROOT/bin/llm-setup" --status
         else
-            info "llm-setup not found - LLM instruction files not configured"
-            info "Run 'llm-setup' to add AI development support"
+            echo "   ❌ llm-setup not found - LLM instruction files not configured"
+            echo "   💡 Run 'llm-setup' to add AI development support"
         fi
     fi
 }
@@ -403,10 +484,6 @@ main() {
     "init")
         shift
         init_project "$@"
-        ;;
-    "detach")
-        shift
-        detach_project "$@"
         ;;
     "status")
         shift
