@@ -140,51 +140,13 @@ Examples:
 
     # Create basic project structure
     if [[ ! -f "README.md" ]]; then
-        cat >"README.md" <<EOF
-# $project_name
-
-## Description
-TODO: Add project description
-
-## Usage
-TODO: Add usage instructions
-
-## Development
-TODO: Add development setup instructions
-EOF
+        sed "s/{{PROJECT_NAME}}/$display_name/g" "$PBPROJECT_ROOT/project-templates/README.md" > "README.md"
         success "Created README.md"
     fi
 
     # Add basic .gitignore if it doesn't exist
     if [[ ! -f ".gitignore" ]]; then
-        cat >".gitignore" <<EOF
-# Dependencies
-node_modules/
-vendor/
-__pycache__/
-*.pyc
-
-# Build outputs
-dist/
-build/
-target/
-*.o
-*.so
-
-# Environment
-.env
-.env.local
-
-# IDE
-.vscode/settings.json
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-EOF
+        cp "$PBPROJECT_ROOT/project-templates/.gitignore" ".gitignore"
         success "Created .gitignore"
     fi
 
