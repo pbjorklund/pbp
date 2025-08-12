@@ -17,7 +17,7 @@ ARGUMENTS:
     bin-directory    Directory to create symlinks in (default: ~/bin)
 
 DESCRIPTION:
-    Creates symlinks for pbproject and llm-link in your local bin directory.
+    Creates symlinks for pbproject and llm-setup in your local bin directory.
     The bin directory will be created if it doesn't exist.
 
 EXAMPLES:
@@ -45,12 +45,13 @@ error() {
 }
 
 main() {
-    local bin_dir="${1:-$DEFAULT_BIN_DIR}"
-
-    if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    # Check for help flags first, before setting bin_dir
+    if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
         show_help
         exit 0
     fi
+
+    local bin_dir="${1:-$DEFAULT_BIN_DIR}"
 
     # Create bin directory if it doesn't exist
     if [[ ! -d "$bin_dir" ]]; then
@@ -63,8 +64,8 @@ main() {
         error "pbproject script not found at $SCRIPT_DIR/bin/pbproject"
     fi
 
-    if [[ ! -f "$SCRIPT_DIR/bin/llm-link" ]]; then
-        error "llm-link script not found at $SCRIPT_DIR/bin/llm-link"
+    if [[ ! -f "$SCRIPT_DIR/bin/llm-setup" ]]; then
+        error "llm-setup script not found at $SCRIPT_DIR/bin/llm-setup"
     fi
 
     # Create symlinks
@@ -72,26 +73,26 @@ main() {
 
     # Remove existing symlinks or files if they exist
     [[ -L "$bin_dir/pbproject" ]] && rm "$bin_dir/pbproject"
-    [[ -L "$bin_dir/llm-link" ]] && rm "$bin_dir/llm-link"
+    [[ -L "$bin_dir/llm-setup" ]] && rm "$bin_dir/llm-setup"
 
     # Check for existing non-symlink files
     if [[ -f "$bin_dir/pbproject" ]] && [[ ! -L "$bin_dir/pbproject" ]]; then
         error "File $bin_dir/pbproject already exists and is not a symlink. Remove it manually first."
     fi
 
-    if [[ -f "$bin_dir/llm-link" ]] && [[ ! -L "$bin_dir/llm-link" ]]; then
-        error "File $bin_dir/llm-link already exists and is not a symlink. Remove it manually first."
+    if [[ -f "$bin_dir/llm-setup" ]] && [[ ! -L "$bin_dir/llm-setup" ]]; then
+        error "File $bin_dir/llm-setup already exists and is not a symlink. Remove it manually first."
     fi
 
     # Create the symlinks
     ln -s "$SCRIPT_DIR/bin/pbproject" "$bin_dir/pbproject"
     success "Created symlink: $bin_dir/pbproject -> $SCRIPT_DIR/bin/pbproject"
 
-    ln -s "$SCRIPT_DIR/bin/llm-link" "$bin_dir/llm-link"
-    success "Created symlink: $bin_dir/llm-link -> $SCRIPT_DIR/bin/llm-link"
+    ln -s "$SCRIPT_DIR/bin/llm-setup" "$bin_dir/llm-setup"
+    success "Created symlink: $bin_dir/llm-setup -> $SCRIPT_DIR/bin/llm-setup"
 
     # Make sure scripts are executable
-    chmod +x "$SCRIPT_DIR/bin/pbproject" "$SCRIPT_DIR/bin/llm-link"
+    chmod +x "$SCRIPT_DIR/bin/pbproject" "$SCRIPT_DIR/bin/llm-setup"
 
     # Check if bin directory is in PATH
     if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
@@ -103,7 +104,7 @@ main() {
         info "Then reload your shell or run: source ~/.bashrc"
     else
         echo
-        success "Setup complete! You can now use 'pbproject' and 'llm-link' commands."
+        success "Setup complete! You can now use 'pbproject' and 'llm-setup' commands."
     fi
 
     # Test the commands
@@ -115,10 +116,10 @@ main() {
         error "pbproject command failed to run"
     fi
 
-    if "$bin_dir/llm-link" --help >/dev/null 2>&1; then
-        success "llm-link command works"
+    if "$bin_dir/llm-setup" --help >/dev/null 2>&1; then
+        success "llm-setup command works"
     else
-        error "llm-link command failed to run"
+        error "llm-setup command failed to run"
     fi
 
     echo
