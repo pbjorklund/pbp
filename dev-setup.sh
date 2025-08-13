@@ -1,28 +1,28 @@
 #!/bin/bash
 set -euo pipefail
 
-# Setup script for pbp - symlinks tools to local bin
+# Development setup script for pbp - symlinks tools from local repo to PATH
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEFAULT_BIN_DIR="$HOME/.local/bin"
 
 show_help() {
     cat <<EOF
-pbp setup script
+pbp development setup script
 
 USAGE:
-    ./setup.sh [bin-directory]
+    ./dev-setup.sh [bin-directory]
 
 ARGUMENTS:
     bin-directory    Directory to create symlinks in (default: ~/.local/bin)
 
 DESCRIPTION:
-    Creates symlinks for pbp and llm-setup in your local bin directory.
-    The bin directory will be created if it doesn't exist.
+    Creates symlinks for pbp and llm-setup from this repo to your local bin directory.
+    For development use only - symlinks to repo files for easy testing of changes.
 
 EXAMPLES:
-    ./setup.sh                 # Install to ~/.local/bin
-    ./setup.sh ~/bin           # Install to ~/bin
+    ./dev-setup.sh                 # Install to ~/.local/bin
+    ./dev-setup.sh ~/bin           # Install to ~/bin
 
 NOTE:
     Make sure your chosen bin directory is in your PATH.

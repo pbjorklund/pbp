@@ -48,7 +48,6 @@ jobs:
           chmod +x bin/pbp-build
           ./bin/pbp-build
           echo "$(sha256sum bin/pbp | awk '{print $1}')  pbp" > checksums.txt
-          echo "$(sha256sum setup.sh | awk '{print $1}')  setup.sh" >> checksums.txt
       - name: Compute release notes
         id: notes
         run: |
@@ -75,5 +74,4 @@ jobs:
           body: ${{ steps.notes.outputs.body }}
           files: |
             bin/pbp
-            setup.sh
             checksums.txt

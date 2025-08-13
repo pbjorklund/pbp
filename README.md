@@ -65,10 +65,10 @@ pbp migrate . --no-history
 curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o ~/.local/bin/pbp && chmod +x ~/.local/bin/pbp
 ```
 
-### With Setup Script  
+### Development Install
 ```bash
-# Clone repo and use setup script (includes llm-setup)
-git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./setup.sh
+# Clone repo and use development setup (includes llm-setup)
+git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./dev-setup.sh
 ```
 
 ### From Source
@@ -87,7 +87,7 @@ git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./setup.sh
 ```bash
 # Setup for development
 git clone https://github.com/pbjorklund/pbp.git && cd pbp
-./setup.sh && git config core.hooksPath .githooks
+./dev-setup.sh && git config core.hooksPath .githooks
 
 # Make changes to src/
 # Pre-commit hook auto-builds bin/pbp
