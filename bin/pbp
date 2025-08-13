@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v4.1.1
-# Built: 2025-08-13T13:56:21Z
-PBP_VERSION='v4.1.1'
-PBP_BUILD_TIME='2025-08-13T13:56:21Z'
+# Version: v4.1.1-4-g41f584f-dirty
+# Built: 2025-08-13T14:22:52Z
+PBP_VERSION='v4.1.1-4-g41f584f-dirty'
+PBP_BUILD_TIME='2025-08-13T14:22:52Z'
 
 # >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
@@ -426,19 +426,19 @@ setup_llm_files() {
     success "Created LLM_INSTRUCTIONS.md"
   fi
   
-  # Create tool-specific instruction files as independent copies
+  # Create tool-specific instruction files as symlinks to LLM_INSTRUCTIONS.md
   for tool_file in "CLAUDE.md" "AGENTS.md" "GEMINI.md"; do
     if [[ ! -f "$tool_file" ]]; then
-      cp "LLM_INSTRUCTIONS.md" "$tool_file"
-      success "Created $tool_file"
+      ln -s "LLM_INSTRUCTIONS.md" "$tool_file"
+      success "Created $tool_file (symlinked to LLM_INSTRUCTIONS.md)"
     fi
   done
   
-  # Create GitHub Copilot instructions
+  # Create GitHub Copilot instructions as symlink
   if [[ ! -f ".github/copilot-instructions.md" ]]; then
     mkdir -p ".github"
-    cp "LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
-    success "Created .github/copilot-instructions.md"
+    ln -s "../LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
+    success "Created .github/copilot-instructions.md (symlinked to LLM_INSTRUCTIONS.md)"
   fi
   
   # Create Roo rules

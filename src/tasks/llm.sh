@@ -204,19 +204,19 @@ setup_llm_files() {
     success "Created LLM_INSTRUCTIONS.md"
   fi
   
-  # Create tool-specific instruction files as independent copies
+  # Create tool-specific instruction files as symlinks to LLM_INSTRUCTIONS.md
   for tool_file in "CLAUDE.md" "AGENTS.md" "GEMINI.md"; do
     if [[ ! -f "$tool_file" ]]; then
-      cp "LLM_INSTRUCTIONS.md" "$tool_file"
-      success "Created $tool_file"
+      ln -s "LLM_INSTRUCTIONS.md" "$tool_file"
+      success "Created $tool_file (symlinked to LLM_INSTRUCTIONS.md)"
     fi
   done
   
-  # Create GitHub Copilot instructions
+  # Create GitHub Copilot instructions as symlink
   if [[ ! -f ".github/copilot-instructions.md" ]]; then
     mkdir -p ".github"
-    cp "LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
-    success "Created .github/copilot-instructions.md"
+    ln -s "../LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
+    success "Created .github/copilot-instructions.md (symlinked to LLM_INSTRUCTIONS.md)"
   fi
   
   # Create Roo rules
