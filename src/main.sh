@@ -5,6 +5,7 @@ $SCRIPT_NAME - Project lifecycle management tool
 USAGE:
     $SCRIPT_NAME init <project-name> [project-path]
     $SCRIPT_NAME migrate <folder-name|.> [source-project-path] [--no-history] [--force]
+    $SCRIPT_NAME check [directory]
     $SCRIPT_NAME newghrepo [project-path]
     $SCRIPT_NAME llm-setup [--status]
     $SCRIPT_NAME status [project-path]
@@ -13,6 +14,7 @@ USAGE:
 COMMANDS:
     init       Create new project with basic structure
     migrate    Extract folder to new repo with history preservation
+    check      Check git status across all repositories
     newghrepo  Create GitHub repository for current project
     llm-setup  Set up AI development instruction files
     status     Show project status and configuration
@@ -23,6 +25,7 @@ MIGRATE FLAGS:
 
 ENVIRONMENT:
     PBP_PROJECTS_DIR   Where to create new projects (default: ~/Projects)
+    PBP_LLM_TEMPLATE   Custom LLM instruction template file
 EOF
 }
 
@@ -31,6 +34,7 @@ main() {
   case "${1:-}" in
     init) shift; init_project "$@";;
     migrate) shift; migrate_folder "$@";;
+    check) shift; check_repos "$@";;
     newghrepo) shift; create_github_repo "$@";;
     llm-setup) shift; llm_setup "$@";;
     status) shift; show_status "$@";;
