@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v3.1.0-dirty
-# Built: 2025-08-13T13:36:37Z
-PBP_VERSION='v3.1.0-dirty'
-PBP_BUILD_TIME='2025-08-13T13:36:37Z'
+# Version: v3.2.0-dirty
+# Built: 2025-08-13T13:44:26Z
+PBP_VERSION='v3.2.0-dirty'
+PBP_BUILD_TIME='2025-08-13T13:44:26Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
@@ -828,7 +828,7 @@ main() {
     llm-setup) shift; llm_setup "$@";;
     status) shift; show_status "$@";;
     --help|-h|help) show_help;;
-    "") error "No command specified. Use '$SCRIPT_NAME --help' for usage.";;
+    "") show_help;;
     *) error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage.";;
   esac
 }

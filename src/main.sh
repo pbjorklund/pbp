@@ -46,7 +46,7 @@ main() {
     llm-setup) shift; llm_setup "$@";;
     status) shift; show_status "$@";;
     --help|-h|help) show_help;;
-    "") error "No command specified. Use '$SCRIPT_NAME --help' for usage.";;
+    "") show_help;;
     *) error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage.";;
   esac
 }

@@ -129,10 +129,14 @@ main() {
     fi
 
     echo
-    info "Quick start:"
-    echo "    pbp init my-new-project"
-    echo "    pbp migrate some-folder"
-    echo "    pbp llm-setup"
+    info "Available commands:"
+    echo "    pbp init <name>        # Create new project"
+    echo "    pbp migrate <folder>   # Extract to new repo with history"
+    echo "    pbp sync               # Clone all your GitHub repos"
+    echo "    pbp check              # Check git status across repos"
+    echo "    pbp llm-setup          # Setup AI development files"
+    echo "    pbp newghrepo          # Create GitHub repo"
+    echo "    pbp status             # Show project status"
 }
 
 main "$@"
