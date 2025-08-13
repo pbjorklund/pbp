@@ -89,6 +89,40 @@ pbp check
 - `PBP_PROJECTS_DIR` - Where to create new projects (default: `~/Projects`)
 - `PBP_LLM_TEMPLATE` - Custom LLM instruction template file
 
+## LLM Setup Example
+
+After running `pbp llm-setup`, AI tools understand your project. Here's a real example from this project's development:
+
+**User:** I have used llm-setup on this project. let's update the instructions (don't forget the thing you just said :))
+
+**AI:** 
+
+```diff
+# pbp - LLM Development Instructions
+
+## Project Overview
+- **Purpose**: [TODO: Brief description of what this project does]
+- **Type**: [TODO: Type of project - CLI tool, web app, library, etc.]
+- **Target Users**: [TODO: Who uses this project]
+- **Tech Stack**: [TODO: Main technologies used]
++ **Purpose**: Project lifecycle management tool for developers with side projects. Extract folders from monorepos with git history, create GitHub repos, sync local repos, and manage AI development setup
++ **Type**: CLI tool written in Bash
++ **Target Users**: Developers with multiple side projects who want to organize, extract utilities, and use AI tools effectively
++ **Tech Stack**: Pure Bash shell scripting, GitHub CLI (gh), git
+```
+
+```diff
+### Common Gotchas
+- [TODO: Things that commonly trip people up]
++ **Always use publish.sh for releases** - don't manually create git tags or GitHub releases
++ **Build before testing changes** - `./bin/pbp-build` must be run to test changes in `bin/pbp`
++ **GitHub CLI auth required** - many commands fail without `gh auth login`
++ **Path assumptions** - assumes `~/Projects` structure, uses absolute paths in some places
++ **Git repo requirements** - most commands expect to be run in git repositories
+```
+
+The AI understood to fill in all the TODO sections with project-specific details and remembered to include the release process gotcha from our earlier conversation about using `publish.sh` instead of manual git operations.
+
 ## Requirements
 
 - **git** - Standard on all systems  
