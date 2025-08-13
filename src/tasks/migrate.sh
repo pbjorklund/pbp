@@ -8,7 +8,9 @@ migrate_folder() {
   # resolve paths
   source_path=$(realpath "$source_path")
   local repo_root="" current_dir new_project_path source_folder
-  if git -C "$source_path" rev-parse --show-toplevel &>/dev/null; then repo_root=$(git -C "$source_path" rev-parse --show-toplevel); fi
+  if git -C "$source_path" rev-parse --show-toplevel &>/dev/null; then 
+    repo_root=$(realpath "$(git -C "$source_path" rev-parse --show-toplevel)")
+  fi
 
   if [[ "$folder_name" == "." ]]; then
     current_dir="$(basename "$source_path")"; new_project_path="$PROJECTS_DIR/$current_dir"
