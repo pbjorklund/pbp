@@ -23,8 +23,11 @@ migrate_folder() {
     else
       # history-preserving using git subtree
       local rel_subdir
-      if [[ "$source_path" == "$repo_root" ]]; then rel_subdir="."; else rel_subdir="${source_path#$repo_root/}"; fi
-      if [[ "$rel_subdir" == "." ]]; then error "At repo root; specify a subfolder or use --force with --no-history"; fi
+      if [[ "$source_path" == "$repo_root" ]]; then
+        error "Cannot extract entire repo with history. Use --no-history --force to move the whole repo."
+      else
+        rel_subdir="${source_path#$repo_root/}"
+      fi
       info "Extracting history for '$rel_subdir' from $repo_root"
       local tmp_branch=pbp_split_$(date +%s)
       git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
