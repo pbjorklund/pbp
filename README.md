@@ -60,12 +60,9 @@ pbp migrate . --no-history
 
 ## Installation
 
-### Quick Install (Recommended)
+### One-liner (Recommended)
 ```bash
-# Download and run setup
-curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o pbp
-chmod +x pbp && mkdir -p ~/.local/bin && mv pbp ~/.local/bin/
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o ~/.local/bin/pbp && chmod +x ~/.local/bin/pbp
 ```
 
 ### With Setup Script  
