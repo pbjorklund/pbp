@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v2.0.10-dirty
-# Built: 2025-08-13T13:20:26Z
-PBP_VERSION='v2.0.10-dirty'
-PBP_BUILD_TIME='2025-08-13T13:20:26Z'
+# Version: v2.0.11
+# Built: 2025-08-13T13:21:06Z
+PBP_VERSION='v2.0.11'
+PBP_BUILD_TIME='2025-08-13T13:21:06Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
