@@ -1,8 +1,7 @@
 create_github_repo() {
   local project_path="${1:-$PWD}"; cd "$project_path"
   if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
-  if ! command -v gh &>/dev/null; then error "GitHub CLI (gh) is not installed. Install it with: dnf install gh"; fi
-  if ! gh auth status &>/dev/null; then error "Not authenticated with GitHub. Run: gh auth login"; fi
+  check_dep_gh
   local project_name; project_name=$(basename "$project_path")
   local current_remote=""; if git remote get-url origin &>/dev/null; then current_remote=$(git remote get-url origin); info "Current remote origin: $current_remote"
     if [[ "$current_remote" == *"github.com"* ]]; then

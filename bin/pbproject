@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBPROJECT_VERSION="${PBPROJECT_VERSION:-unknown}"
 PBPROJECT_BUILD_TIME="${PBPROJECT_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbproject version: ${PBPROJECT_VERSION} (${PBPROJECT_BUILD_TIME})"; }
-# Version: v1.0.3-dirty
-# Built: 2025-08-13T12:46:21Z
-PBPROJECT_VERSION='v1.0.3-dirty'
-PBPROJECT_BUILD_TIME='2025-08-13T12:46:21Z'
+# Version: v1.0.4-dirty
+# Built: 2025-08-13T12:48:11Z
+PBPROJECT_VERSION='v1.0.4-dirty'
+PBPROJECT_BUILD_TIME='2025-08-13T12:48:11Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
@@ -21,6 +21,24 @@ PBPROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_NAME="$(basename "$0")"
 PROJECTS_DIR="$HOME/Projects"
 
+# >>> /home/pbjorklund/Projects/pbproject/src/lib/deps.sh
+check_dep_gh() {
+  if ! command -v gh &>/dev/null; then
+    error "GitHub CLI (gh) is required for this operation.
+Install: dnf install gh
+Then authenticate: gh auth login"
+  fi
+  if ! gh auth status &>/dev/null; then
+    error "GitHub CLI is not authenticated.
+Run: gh auth login"
+  fi
+}
+
+check_dep_git() {
+  if ! command -v git &>/dev/null; then
+    error "Git is required but not found in PATH."
+  fi
+}
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/ui.sh
 info() { echo "ℹ️  $1"; }
 success() { echo "✅ $1"; }
@@ -30,8 +48,7 @@ error() { echo "❌ Error: $1" >&2; exit 1; }
 create_github_repo() {
   local project_path="${1:-$PWD}"; cd "$project_path"
   if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
-  if ! command -v gh &>/dev/null; then error "GitHub CLI (gh) is not installed. Install it with: dnf install gh"; fi
-  if ! gh auth status &>/dev/null; then error "Not authenticated with GitHub. Run: gh auth login"; fi
+  check_dep_gh
   local project_name; project_name=$(basename "$project_path")
   local current_remote=""; if git remote get-url origin &>/dev/null; then current_remote=$(git remote get-url origin); info "Current remote origin: $current_remote"
     if [[ "$current_remote" == *"github.com"* ]]; then
