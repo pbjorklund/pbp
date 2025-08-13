@@ -39,6 +39,7 @@ pbp migrate . --no-history
 ## Contributing
 
 ```bash
-git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./dev-setup.sh
-# Make changes to src/, then: ./publish.sh patch
+# Fork the repo on GitHub, then:
+git clone https://github.com/YOUR_USERNAME/pbp.git && cd pbp && ./dev-setup.sh
+# Make changes to src/, commit, and open a pull request
 ```
