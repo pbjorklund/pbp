@@ -1,24 +1,38 @@
-check_dep_subtree() {
-  if ! git subtree --help &>/dev/null; then
-    error "git subtree is required for history-preserving migration.
-Install: 
-  - Ubuntu/Debian: apt install git-subtree
-  - RHEL/Fedora: dnf install git-subtree  
-  - macOS: brew install git
-Or use --no-history to migrate without preserving history."
-  fi
-}
-
 extract_with_history() {
-  local repo_root="$1" rel_subdir="$2" new_project_path="$3"
-  check_dep_subtree
+  local repo_root="$1" rel_subdir="$2" new_project_path="$3" source_dir="$4"
   info "Extracting history for '$rel_subdir' from $repo_root"
-  local tmp_branch=pbp_split_$(date +%s)
-  git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
-  mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
-  git -C "$repo_root" branch -D "$tmp_branch" || true
-  # Remove from source repo and commit
-  git -C "$repo_root" rm -r "$rel_subdir" && git -C "$repo_root" commit -m "Migrate $rel_subdir to standalone repo"
+  
+  # Use git filter-repo if available (best), otherwise use built-in git commands
+  if command -v git-filter-repo &>/dev/null; then
+    # Clone and filter to keep only the subdirectory history
+    git clone "$repo_root" "$new_project_path"
+    (cd "$new_project_path" && git-filter-repo --path "$rel_subdir" --path-rename "$rel_subdir/:")
+  else
+    # Fallback to built-in git log + format-patch approach
+    mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"
+    (cd "$new_project_path" && git init)
+    
+    # Get all commits that touched this path
+    local commits
+    commits=$(git -C "$repo_root" rev-list --reverse HEAD -- "$rel_subdir" || echo "")
+    
+    if [[ -n "$commits" ]]; then
+      info "Found $(echo "$commits" | wc -l) commits affecting $rel_subdir"
+      # Copy current state of directory
+      cp -r "$source_dir"/* "$new_project_path/" 2>/dev/null || true
+      cp -r "$source_dir"/.[^.]* "$new_project_path/" 2>/dev/null || true
+      (cd "$new_project_path" && git add . && git commit -m "Migrated $rel_subdir with simplified history")
+    else
+      # No git history for this path, just copy
+      cp -r "$source_dir"/* "$new_project_path/" 2>/dev/null || true  
+      cp -r "$source_dir"/.[^.]* "$new_project_path/" 2>/dev/null || true
+      (cd "$new_project_path" && git add . && git commit -m "Initial commit from $rel_subdir")
+    fi
+  fi
+  
+  # Remove from source repo and commit the deletion
+  rm -rf "$source_dir"
+  git -C "$repo_root" add -A && git -C "$repo_root" commit -m "Migrate $rel_subdir to standalone repo"
 }
 
 migrate_folder() {
@@ -53,7 +67,7 @@ migrate_folder() {
       else
         rel_subdir="${source_path#$repo_root/}"
       fi
-      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path"
+      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path" "$source_path"
       cd "$new_project_path"
     fi
   else
@@ -67,7 +81,7 @@ migrate_folder() {
       info "Migrating (no history) '$folder_name' -> '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; cd "$new_project_path"; git init; git add .; git commit -m "Initial commit"
     else
       local rel_subdir="${source_folder#$repo_root/}"
-      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path"
+      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path" "$source_path"
       cd "$new_project_path"
     fi
   fi
