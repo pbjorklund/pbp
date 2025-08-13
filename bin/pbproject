@@ -1,19 +1,139 @@
 #!/bin/bash
 set -euo pipefail
+IFS=$'\n\t'
 
-# pbproject - Project initialization and management tool
-# Manages symlinked project templates from dotfiles
+# Generated bundle header; do not edit in bin/pbproject
+# Source modules are in src/
+# Version: 31054ad-dirty
+# Built: 2025-08-13T12:26:23Z
 
-# Global configuration
-# Auto-detect pbproject root based on script location (resolve symlinks)
+# >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
+# Paths and globals
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-PBPROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PBPROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_NAME="$(basename "$0")"
 PROJECTS_DIR="$HOME/Projects"
 
+# >>> /home/pbjorklund/Projects/pbproject/src/lib/ui.sh
+info() { echo "ℹ️  $1"; }
+success() { echo "✅ $1"; }
+error() { echo "❌ Error: $1" >&2; exit 1; }
+
+# >>> /home/pbjorklund/Projects/pbproject/src/tasks/github.sh
+create_github_repo() {
+  local project_path="${1:-$PWD}"; cd "$project_path"
+  if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
+  if ! command -v gh &>/dev/null; then error "GitHub CLI (gh) is not installed. Install it with: dnf install gh"; fi
+  if ! gh auth status &>/dev/null; then error "Not authenticated with GitHub. Run: gh auth login"; fi
+  local project_name; project_name=$(basename "$project_path")
+  local current_remote=""; if git remote get-url origin &>/dev/null; then current_remote=$(git remote get-url origin); info "Current remote origin: $current_remote"
+    if [[ "$current_remote" == *"github.com"* ]]; then
+      local username expected_remote expected_https; username=$(gh api user --jq .login); expected_remote="git@github.com:$username/$project_name.git"; expected_https="https://github.com/$username/$project_name.git"
+      if [[ "$current_remote" == "$expected_remote" ]] || [[ "$current_remote" == "$expected_https" ]]; then
+        info "GitHub repository already configured correctly"
+        if git log origin/"$(git branch --show-current)" 2>/dev/null; then info "Repository is up to date"; else info "Attempting to push unpushed commits"; if git push origin "$(git branch --show-current)"; then success "Successfully pushed to existing repository"; else error "Failed to push to existing repository. Check SSH keys or run manually: git push origin $(git branch --show-current)"; fi; fi
+        return
+      else info "Different GitHub repository already configured: $current_remote"; return; fi
+    fi
+  fi
+  local username; username=$(gh api user --jq .login)
+  if gh repo view "$username/$project_name" &>/dev/null; then
+    info "Repository $username/$project_name already exists on GitHub"
+    if [[ -z "$current_remote" ]]; then info "Adding remote origin"; git remote add origin "git@github.com:$username/$project_name.git"; success "Added remote origin"; fi
+    info "Attempting to push to existing repository"; if git push -u origin "$(git branch --show-current)"; then success "Successfully pushed to existing repository"; success "Repository URL: https://github.com/$username/$project_name"; else error "Failed to push to repository. Check SSH keys or run manually: git push -u origin $(git branch --show-current)"; fi; return
+  fi
+  info "Creating private GitHub repository: $project_name"
+  if gh repo create "$project_name" --private --source=. --remote=origin; then
+    success "GitHub repository created successfully"; info "Pushing code to repository"
+    if git push -u origin "$(git branch --show-current)"; then success "Code pushed successfully"; success "Repository URL: https://github.com/$username/$project_name"; else info "Repository created but push failed"; info "You can push manually later with: git push -u origin $(git branch --show-current)"; info "Check your SSH keys: ssh -T git@github.com"; success "Repository URL: https://github.com/$username/$project_name"; fi
+  else error "Failed to create GitHub repository"; fi
+}
+
+# >>> /home/pbjorklund/Projects/pbproject/src/tasks/init.sh
+check_pbproject() {
+  if [[ ! -d "$PBPROJECT_ROOT" ]]; then error "pbproject directory not found at $PBPROJECT_ROOT"; fi
+  if [[ ! -f "$PBPROJECT_ROOT/bin/llm-setup" ]]; then error "llm-setup script not found at $PBPROJECT_ROOT/bin/llm-setup"; fi
+  if [[ ! -d "$PBPROJECT_ROOT/project-templates" ]]; then error "project-templates directory not found at $PBPROJECT_ROOT/project-templates"; fi
+}
+
+init_project() {
+  local project_name="${1:-}"
+  if [[ -z "$project_name" ]]; then error "Project name is required"; fi
+  local project_path display_name
+  if [[ "$project_name" == "." ]]; then
+    project_path="$PWD"; display_name="$(basename "$PWD")"
+  else
+    project_path="${2:-$PWD/$project_name}"; display_name="$project_name"
+  fi
+  check_pbproject
+  info "Creating project directory: $project_path"; mkdir -p "$project_path"; cd "$project_path"
+  if [[ ! -d .git ]]; then info "Initializing git repository"; git init; success "Git repository initialized"; else info "Git repository already exists"; fi
+  info "Basic project structure created"
+  if [[ ! -f README.md ]]; then sed "s/{{PROJECT_NAME}}/$display_name/g" "$PBPROJECT_ROOT/project-templates/README.md" > README.md; success "Created README.md"; fi
+  if [[ ! -f .gitignore ]]; then cp "$PBPROJECT_ROOT/project-templates/.gitignore" .gitignore; success "Created .gitignore"; fi
+  success "Project '$display_name' initialized at $project_path"
+}
+
+# >>> /home/pbjorklund/Projects/pbproject/src/tasks/migrate.sh
+migrate_folder() {
+  local folder_name="${1:-}"; local source_path="${2:-$PWD}"; if [[ -z "$folder_name" ]]; then error "Folder name is required"; fi
+  local new_project_path current_dir
+  if [[ "$folder_name" == "." ]]; then
+    current_dir="$(basename "$PWD")"; new_project_path="$PROJECTS_DIR/$current_dir"
+    if [[ "$PWD" == "$PROJECTS_DIR"/* ]] && [[ -d .git ]]; then error "Already in ~/Projects/ and is a git repository"; fi
+    if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
+    info "Migrating current directory '$current_dir' to '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; cd ..; mv "$current_dir" "$new_project_path"; cd "$new_project_path"
+  else
+    source_path=$(realpath "$source_path"); local source_folder="$source_path/$folder_name"
+    if [[ ! -d "$source_folder" ]]; then error "Folder '$folder_name' not found in '$source_path'"; fi
+    new_project_path="$PROJECTS_DIR/$folder_name"; if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
+    info "Migrating folder '$folder_name' to '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; cd "$new_project_path"
+  fi
+  if [[ ! -d .git ]]; then git init; fi; git add .; git commit -m "Initial commit"; create_github_repo "$new_project_path"; success "Successfully migrated to '$new_project_path'"
+}
+
+# >>> /home/pbjorklund/Projects/pbproject/src/tasks/status.sh
+show_status() {
+  local project_path="${1:-$PWD}"; cd "$project_path"
+  if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
+  info "Project status for: $project_path"; echo
+  echo "📁 Project: $(basename "$project_path")"; echo "📂 Path: $project_path"; echo
+  echo "🔀 Git Information:"; local current_branch; current_branch=$(git branch --show-current 2>/dev/null || echo "unknown"); echo "   Branch: $current_branch"
+  if ! git diff-index --quiet HEAD -- 2>/dev/null; then echo "   Status: ⚠️  Uncommitted changes"; else echo "   Status: ✅ Clean working directory"; fi
+  if git remote get-url origin &>/dev/null; then
+    local remote_url; remote_url=$(git remote get-url origin); echo "   Remote: $remote_url"
+    if [[ "$remote_url" == *"github.com"* ]]; then
+      echo; echo "🐙 GitHub Repository:"; local repo_info=""
+      if [[ "$remote_url" == *"git@github.com:"* ]]; then repo_info=$(echo "$remote_url" | sed 's/git@github.com://' | sed 's/\.git$//');
+      elif [[ "$remote_url" == *"https://github.com/"* ]]; then repo_info=$(echo "$remote_url" | sed 's|https://github.com/||' | sed 's/\.git$//'); fi
+      if [[ -n "$repo_info" ]] && command -v gh &>/dev/null; then
+        echo "   Repository: https://github.com/$repo_info"
+        if gh repo view "$repo_info" &>/dev/null; then
+          local visibility; visibility=$(gh repo view "$repo_info" --json visibility --jq .visibility 2>/dev/null || echo "unknown"); echo "   Visibility: $visibility"
+          if git fetch origin &>/dev/null; then
+            local ahead behind; ahead=$(git rev-list --count HEAD..origin/$current_branch 2>/dev/null || echo "0"); behind=$(git rev-list --count origin/$current_branch..HEAD 2>/dev/null || echo "0")
+            if [[ "$ahead" -gt 0 ]] && [[ "$behind" -gt 0 ]]; then echo "   Sync: ⚠️  $behind ahead, $ahead behind";
+            elif [[ "$behind" -gt 0 ]]; then echo "   Sync: ⬆️  $behind commits ahead";
+            elif [[ "$ahead" -gt 0 ]]; then echo "   Sync: ⬇️  $ahead commits behind"; else echo "   Sync: ✅ Up to date"; fi
+          fi
+        else echo "   Status: ❌ Repository not accessible or doesn't exist"; fi
+      else echo "   Repository: $repo_info (GitHub CLI not available for detailed info)"; fi
+    fi
+  else echo "   Remote: ❌ No remote configured"; echo; echo "💡 To create GitHub repository: pbproject newghrepo"; fi
+  echo
+  echo "📋 Project Structure:"; [[ -f README.md ]] && echo "   ✅ README.md" || echo "   ❌ README.md missing"; [[ -f .gitignore ]] && echo "   ✅ .gitignore" || echo "   ❌ .gitignore missing"
+  if [[ -f package.json ]]; then echo "   📦 package.json (Node.js project)"; elif [[ -f Cargo.toml ]]; then echo "   🦀 Cargo.toml (Rust project)"; elif [[ -f pyproject.toml ]] || [[ -f requirements.txt ]]; then echo "   🐍 Python project"; elif [[ -f go.mod ]]; then echo "   🐹 go.mod (Go project)"; fi
+  echo
+  echo "🤖 AI Development Support:";
+  if command -v llm-setup &>/dev/null; then llm-setup --status;
+  elif [[ -x "$PBPROJECT_ROOT/bin/llm-setup" ]]; then "$PBPROJECT_ROOT/bin/llm-setup" --status;
+  else echo "   ❌ llm-setup not found - LLM instruction files not configured"; echo "   💡 Run 'llm-setup' to add AI development support"; fi
+}
+
+# >>> /home/pbjorklund/Projects/pbproject/src/main.sh
 show_help() {
-    cat <<EOF
+  cat <<EOF
 $SCRIPT_NAME - Project initialization and management tool
 
 USAGE:
@@ -22,491 +142,19 @@ USAGE:
     $SCRIPT_NAME migrate <folder-name> [source-project-path]
     $SCRIPT_NAME newghrepo [project-path]
     $SCRIPT_NAME --help
-
-COMMANDS:
-    init       Create new project with basic structure
-    status     Show project status and LLM instruction file status
-    migrate    Move a folder from existing project to new standalone project
-    newghrepo  Create private GitHub repository and push current project
-    --help     Show this help message
-
-ARGUMENTS:
-    project-name         Name for the new project directory
-    project-path         Path to project directory (defaults to current directory)
-    folder-name          Name of folder to migrate from source project
-    source-project-path  Path to source project containing folder (defaults to current directory)
-
-EXAMPLES:
-    $SCRIPT_NAME init my-app                    # Create ./my-app with basic structure
-    $SCRIPT_NAME init my-app ~/projects/my-app  # Create project at specific path
-    $SCRIPT_NAME status                         # Check project and LLM instruction status
-    $SCRIPT_NAME migrate batch_writer           # Move ./batch_writer to new project
-    $SCRIPT_NAME migrate iso27kv2 ~/Projects/cli-tool  # Move folder from specific source
-    $SCRIPT_NAME newghrepo                      # Create GitHub repo for current project
-    
-LLM SETUP:
-    After creating a project, run 'llm-setup' to add AI development support
-
-BASE FILES:
-    pbproject init creates a basic project structure:
-    - README.md (Basic project documentation)
-    - .gitignore (Common ignore patterns)
-    
-    LLM INSTRUCTIONS:
-    For AI development support, run 'llm-setup' in the project directory.
-    This creates customizable instruction files for AI assistants.
-
-TROUBLESHOOTING:
-    SSH Permission Denied when creating GitHub repository:
-    1. Check SSH key setup: ssh -T git@github.com
-    2. If needed, generate new SSH key: ssh-keygen -t ed25519 -C "your_email@example.com"
-    3. Add key to GitHub: gh ssh-key add ~/.ssh/id_ed25519.pub
-    4. Re-run: $SCRIPT_NAME newghrepo
 EOF
 }
 
-error() {
-    echo "❌ Error: $1" >&2
-    exit 1
-}
-
-info() {
-    echo "ℹ️  $1"
-}
-
-success() {
-    echo "✅ $1"
-}
-
-check_pbproject() {
-    if [[ ! -d "$PBPROJECT_ROOT" ]]; then
-        error "pbproject directory not found at $PBPROJECT_ROOT"
-    fi
-
-    # Check for llm-setup script
-    if [[ ! -f "$PBPROJECT_ROOT/bin/llm-setup" ]]; then
-        error "llm-setup script not found at $PBPROJECT_ROOT/bin/llm-setup"
-    fi
-
-    # Check for project templates
-    if [[ ! -d "$PBPROJECT_ROOT/project-templates" ]]; then
-        error "project-templates directory not found at $PBPROJECT_ROOT/project-templates"
-    fi
-}
-
-init_project() {
-    local project_name="${1:-}"
-    
-    if [[ -z "$project_name" ]]; then
-        error "Project name is required
-
-Usage:
-  pbproject init my-project     # Create new directory 'my-project'
-  pbproject init .              # Initialize current directory as project
-
-Examples:
-  pbproject init my-cool-app    # Creates ~/Projects/my-cool-app/
-  cd ~/existing-folder && pbproject init .    # Initialize existing folder"
-    fi
-
-    # Handle current directory initialization
-    if [[ "$project_name" == "." ]]; then
-        local project_path="$PWD"
-        local display_name="$(basename "$PWD")"
-    else
-        local project_path="${2:-$PWD/$project_name}"
-        local display_name="$project_name"
-    fi
-
-    check_pbproject
-
-    info "Creating project directory: $project_path"
-    mkdir -p "$project_path"
-    cd "$project_path"
-
-    # Initialize git repository
-    if [[ ! -d ".git" ]]; then
-        info "Initializing git repository"
-        git init
-        success "Git repository initialized"
-    else
-        info "Git repository already exists"
-    fi
-
-    # Basic project setup complete
-    info "Basic project structure created"
-
-    # Create basic project structure
-    if [[ ! -f "README.md" ]]; then
-        sed "s/{{PROJECT_NAME}}/$display_name/g" "$PBPROJECT_ROOT/project-templates/README.md" > "README.md"
-        success "Created README.md"
-    fi
-
-    # Add basic .gitignore if it doesn't exist
-    if [[ ! -f ".gitignore" ]]; then
-        cp "$PBPROJECT_ROOT/project-templates/.gitignore" ".gitignore"
-        success "Created .gitignore"
-    fi
-
-    success "Project '$display_name' initialized at $project_path"
-    echo
-    info "🚀 Next steps:"
-    if [[ "$project_name" == "." ]]; then
-        echo "   1. Add your code and documentation"
-        echo "   2. When ready for AI development support: llm-setup"
-        echo "   3. Create GitHub repo when ready: pbproject newghrepo"
-    else
-        echo "   1. cd $project_path"
-        echo "   2. Add your code and documentation"
-        echo "   3. When ready for AI development support: llm-setup"
-        echo "   4. Create GitHub repo when ready: pbproject newghrepo"
-    fi
-    echo
-    info "💡 Other pbproject commands:"
-    echo "   • pbproject status    - Show project info and configuration"
-    echo "   • pbproject migrate   - Extract subfolder to new repo"
-}
-
-
-
-show_status() {
-    local project_path="${1:-$PWD}"
-    cd "$project_path"
-
-    if [[ ! -d ".git" ]]; then
-        error "Not in a git repository. Run this command in a project directory."
-    fi
-
-    info "Project status for: $project_path"
-    echo
-
-    # Show basic project info
-    echo "📁 Project: $(basename "$project_path")"
-    echo "📂 Path: $project_path"
-    echo
-    
-    # Show git status
-    echo "🔀 Git Information:"
-    local current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
-    echo "   Branch: $current_branch"
-    
-    # Check for uncommitted changes
-    if ! git diff-index --quiet HEAD -- 2>/dev/null; then
-        echo "   Status: ⚠️  Uncommitted changes"
-    else
-        echo "   Status: ✅ Clean working directory"
-    fi
-    
-    # Show remote information
-    if git remote get-url origin &>/dev/null; then
-        local remote_url=$(git remote get-url origin)
-        echo "   Remote: $remote_url"
-        
-        # Check if it's a GitHub repository
-        if [[ "$remote_url" == *"github.com"* ]]; then
-            echo
-            echo "🐙 GitHub Repository:"
-            
-            # Extract repo info from URL
-            local repo_info=""
-            if [[ "$remote_url" == *"git@github.com:"* ]]; then
-                repo_info=$(echo "$remote_url" | sed 's/git@github.com://' | sed 's/\.git$//')
-            elif [[ "$remote_url" == *"https://github.com/"* ]]; then
-                repo_info=$(echo "$remote_url" | sed 's|https://github.com/||' | sed 's/\.git$//')
-            fi
-            
-            if [[ -n "$repo_info" ]] && command -v gh &>/dev/null; then
-                echo "   Repository: https://github.com/$repo_info"
-                
-                # Check if repo exists and is accessible
-                if gh repo view "$repo_info" &>/dev/null; then
-                    local visibility=$(gh repo view "$repo_info" --json visibility --jq .visibility 2>/dev/null || echo "unknown")
-                    echo "   Visibility: $visibility"
-                    
-                    # Check if local is ahead/behind remote
-                    if git fetch origin &>/dev/null; then
-                        local ahead=$(git rev-list --count HEAD..origin/$current_branch 2>/dev/null || echo "0")
-                        local behind=$(git rev-list --count origin/$current_branch..HEAD 2>/dev/null || echo "0")
-                        
-                        if [[ "$ahead" -gt 0 ]] && [[ "$behind" -gt 0 ]]; then
-                            echo "   Sync: ⚠️  $behind ahead, $ahead behind"
-                        elif [[ "$behind" -gt 0 ]]; then
-                            echo "   Sync: ⬆️  $behind commits ahead"
-                        elif [[ "$ahead" -gt 0 ]]; then
-                            echo "   Sync: ⬇️  $ahead commits behind"
-                        else
-                            echo "   Sync: ✅ Up to date"
-                        fi
-                    fi
-                else
-                    echo "   Status: ❌ Repository not accessible or doesn't exist"
-                fi
-            else
-                echo "   Repository: $repo_info (GitHub CLI not available for detailed info)"
-            fi
-        fi
-    else
-        echo "   Remote: ❌ No remote configured"
-        echo
-        echo "💡 To create GitHub repository: pbproject newghrepo"
-    fi
-    
-    echo
-    
-    # Show project structure
-    echo "📋 Project Structure:"
-    if [[ -f "README.md" ]]; then
-        echo "   ✅ README.md"
-    else
-        echo "   ❌ README.md missing"
-    fi
-    
-    if [[ -f ".gitignore" ]]; then
-        echo "   ✅ .gitignore"
-    else
-        echo "   ❌ .gitignore missing"
-    fi
-    
-    # Check for common project files
-    if [[ -f "package.json" ]]; then
-        echo "   📦 package.json (Node.js project)"
-    elif [[ -f "Cargo.toml" ]]; then
-        echo "   🦀 Cargo.toml (Rust project)"
-    elif [[ -f "pyproject.toml" ]] || [[ -f "requirements.txt" ]]; then
-        echo "   🐍 Python project"
-    elif [[ -f "go.mod" ]]; then
-        echo "   🐹 go.mod (Go project)"
-    fi
-    
-    echo
-    
-    # Use llm-setup to show LLM file status
-    echo "🤖 AI Development Support:"
-    if command -v llm-setup &>/dev/null; then
-        llm-setup --status
-    else
-        # Fallback to PATH if not found
-        if [[ -x "$PBPROJECT_ROOT/bin/llm-setup" ]]; then
-            "$PBPROJECT_ROOT/bin/llm-setup" --status
-        else
-            echo "   ❌ llm-setup not found - LLM instruction files not configured"
-            echo "   💡 Run 'llm-setup' to add AI development support"
-        fi
-    fi
-}
-
-migrate_folder() {
-    local folder_name="${1:-}"
-    local source_path="${2:-$PWD}"
-
-    if [[ -z "$folder_name" ]]; then
-        error "Folder name is required"
-    fi
-
-    # Normalize source path
-    source_path=$(realpath "$source_path")
-    local source_folder="$source_path/$folder_name"
-
-    if [[ ! -d "$source_folder" ]]; then
-        error "Folder '$folder_name' not found in '$source_path'"
-    fi
-
-    # Check for git repository in source
-    if [[ ! -d "$source_path/.git" ]]; then
-        error "Source path '$source_path' is not a git repository"
-    fi
-
-    # Create new project directory in ~/Projects/
-    local new_project_path="$PROJECTS_DIR/$folder_name"
-
-    if [[ -e "$new_project_path" ]]; then
-        error "Directory '$new_project_path' already exists"
-    fi
-
-    info "Migrating folder '$folder_name' from '$source_path' to '$new_project_path'"
-
-    # Ensure Projects directory exists
-    mkdir -p "$PROJECTS_DIR"
-
-    # Initialize new project
-    init_project "$folder_name" "$new_project_path"
-
-    # Copy folder contents to new project
-    info "Copying folder contents to new project"
-    cp -r "$source_folder"/* "$new_project_path/" 2>/dev/null || true
-    cp -r "$source_folder"/.[^.]* "$new_project_path/" 2>/dev/null || true
-
-    # Add and commit files
-    cd "$new_project_path"
-    git add .
-    git commit -m "Initial commit - migrated from $source_path/$folder_name"
-
-    # Create GitHub repository and push
-    info "Creating GitHub repository"
-    create_github_repo "$new_project_path"
-
-    # Copy repository URL to clipboard
-    local username=$(gh api user --jq .login 2>/dev/null || echo "unknown")
-    local repo_url="https://github.com/$username/$folder_name"
-
-    if command -v wl-copy &>/dev/null; then
-        echo "$repo_url" | wl-copy
-        success "Repository URL copied to clipboard: $repo_url"
-    elif command -v xclip &>/dev/null; then
-        echo "$repo_url" | xclip -selection clipboard
-        success "Repository URL copied to clipboard: $repo_url"
-    else
-        success "Repository URL: $repo_url"
-        info "Install wl-copy or xclip to auto-copy URLs to clipboard"
-    fi
-
-    # Remove original folder from source project
-    info "Removing original folder from source project"
-    cd "$source_path"
-    rm -rf "$folder_name"
-    git add "$folder_name"
-    if git diff --staged --quiet; then
-        info "No changes to commit in source project"
-    else
-        git commit -m "Remove $folder_name - migrated to standalone project
-
-Folder has been extracted to: $new_project_path
-GitHub repository: $repo_url"
-        success "Committed removal of $folder_name from source project"
-    fi
-
-    success "Successfully migrated '$folder_name' to '$new_project_path'"
-    info "Original folder removed from source project"
-    info "New project location: $new_project_path"
-}
-
-create_github_repo() {
-    local project_path="${1:-$PWD}"
-    cd "$project_path"
-
-    if [[ ! -d ".git" ]]; then
-        error "Not in a git repository. Run this command in a project directory."
-    fi
-
-    # Check if gh CLI is installed
-    if ! command -v gh &>/dev/null; then
-        error "GitHub CLI (gh) is not installed. Install it with: dnf install gh"
-    fi
-
-    # Check if user is authenticated
-    if ! gh auth status &>/dev/null; then
-        error "Not authenticated with GitHub. Run: gh auth login"
-    fi
-
-    # Get project name from directory
-    local project_name=$(basename "$project_path")
-
-    # Get current remote origin
-    local current_remote=""
-    if git remote get-url origin &>/dev/null; then
-        current_remote=$(git remote get-url origin)
-        info "Current remote origin: $current_remote"
-
-        if [[ "$current_remote" == *"github.com"* ]]; then
-            # Check if this is our expected repository
-            local username=$(gh api user --jq .login)
-            local expected_remote="git@github.com:$username/$project_name.git"
-            local expected_https="https://github.com/$username/$project_name.git"
-
-            if [[ "$current_remote" == "$expected_remote" ]] || [[ "$current_remote" == "$expected_https" ]]; then
-                info "GitHub repository already configured correctly"
-                # Try to push if there are unpushed commits
-                if git log origin/$(git branch --show-current) 2>/dev/null; then
-                    info "Repository is up to date"
-                else
-                    info "Attempting to push unpushed commits"
-                    if git push origin $(git branch --show-current); then
-                        success "Successfully pushed to existing repository"
-                    else
-                        error "Failed to push to existing repository. Check SSH keys or run manually: git push origin $(git branch --show-current)"
-                    fi
-                fi
-                return
-            else
-                info "Different GitHub repository already configured: $current_remote"
-                return
-            fi
-        fi
-    fi
-
-    # Check if repository already exists on GitHub
-    local username=$(gh api user --jq .login)
-    if gh repo view "$username/$project_name" &>/dev/null; then
-        info "Repository $username/$project_name already exists on GitHub"
-
-        # Add remote if not already configured
-        if [[ -z "$current_remote" ]]; then
-            info "Adding remote origin"
-            git remote add origin "git@github.com:$username/$project_name.git"
-            success "Added remote origin"
-        fi
-
-        # Try to push
-        info "Attempting to push to existing repository"
-        if git push -u origin $(git branch --show-current); then
-            success "Successfully pushed to existing repository"
-            success "Repository URL: https://github.com/$username/$project_name"
-        else
-            error "Failed to push to repository. Check SSH keys or run manually: git push -u origin $(git branch --show-current)"
-        fi
-        return
-    fi
-
-    info "Creating private GitHub repository: $project_name"
-
-    # Create GitHub repository without immediate push
-    if gh repo create "$project_name" --private --source=. --remote=origin; then
-        success "GitHub repository created successfully"
-
-        # Try to push separately so we can handle failures gracefully
-        info "Pushing code to repository"
-        if git push -u origin $(git branch --show-current); then
-            success "Code pushed successfully"
-            success "Repository URL: https://github.com/$username/$project_name"
-        else
-            info "Repository created but push failed"
-            info "You can push manually later with: git push -u origin $(git branch --show-current)"
-            info "Check your SSH keys: ssh -T git@github.com"
-            success "Repository URL: https://github.com/$username/$project_name"
-        fi
-    else
-        error "Failed to create GitHub repository"
-    fi
-}
-
 main() {
-    case "${1:-}" in
-    "init")
-        shift
-        init_project "$@"
-        ;;
-    "status")
-        shift
-        show_status "$@"
-        ;;
-    "migrate")
-        shift
-        migrate_folder "$@"
-        ;;
-    "newghrepo")
-        shift
-        create_github_repo "$@"
-        ;;
-    "--help" | "-h" | "help")
-        show_help
-        ;;
-    "")
-        error "No command specified. Use '$SCRIPT_NAME --help' for usage information."
-        ;;
-    *)
-        error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage information."
-        ;;
-    esac
+  case "${1:-}" in
+    init) shift; init_project "$@";;
+    status) shift; show_status "$@";;
+    migrate) shift; migrate_folder "$@";;
+    newghrepo) shift; create_github_repo "$@";;
+    --help|-h|help) show_help;;
+    "") error "No command specified. Use '$SCRIPT_NAME --help' for usage.";;
+    *) error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage.";;
+  esac
 }
 
 main "$@"

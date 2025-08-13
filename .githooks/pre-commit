@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo_root="$(git rev-parse --show-toplevel)"
+"$repo_root/bin/pbproject-build" >/dev/null
+# If build changed files, fail and ask to stage
+if ! git diff --quiet -- "$repo_root/bin/pbproject"; then
+  echo "pbproject rebuilt; stage updated bin/pbproject" >&2
+  exit 1
+fi
