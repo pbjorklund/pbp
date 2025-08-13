@@ -68,24 +68,24 @@ migrate_folder() {
         rel_subdir="${source_path#$repo_root/}"
       fi
       extract_with_history "$repo_root" "$rel_subdir" "$new_project_path" "$source_path"
-      cd "$new_project_path"
     fi
   else
     source_folder="$source_path/$folder_name"
     if [[ ! -d "$source_folder" ]]; then error "Folder '$folder_name' not found in '$source_path'"; fi
     new_project_path="$PROJECTS_DIR/$folder_name"; if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
-    if git -C "$source_path" rev-parse --show-toplevel &>/dev/null; then repo_root=$(git -C "$source_path" rev-parse --show-toplevel); fi
+    if git -C "$source_path" rev-parse --show-toplevel &>/dev/null; then repo_root=$(realpath "$(git -C "$source_path" rev-parse --show-toplevel)"); fi
     if [[ -n "$repo_root" ]] && [[ "$source_folder" == "$repo_root" ]]; then error "Cannot migrate entire repo as a folder; choose a subfolder"; fi
 
     if [[ "$no_history" == true ]] || [[ -z "$repo_root" ]]; then
-      info "Migrating (no history) '$folder_name' -> '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; cd "$new_project_path"; git init; git add .; git commit -m "Initial commit"
+      info "Migrating (no history) '$folder_name' -> '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; git -C "$repo_root" add -A; git -C "$repo_root" commit -m "Migrate $folder_name to standalone repo" || true
     else
       local rel_subdir="${source_folder#$repo_root/}"
-      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path" "$source_path"
-      cd "$new_project_path"
+      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path" "$source_folder"
     fi
   fi
 
+  # Always end up in the new project directory
+  cd "$new_project_path"
   create_github_repo "$new_project_path"
   success "Successfully migrated to '$new_project_path'"
 }
