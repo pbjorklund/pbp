@@ -15,7 +15,7 @@ USAGE:
 COMMANDS:
     init       Create new project with basic structure
     migrate    Extract folder to new repo with history preservation
-    sync       Clone owned GitHub repos that aren't already cloned
+     sync       Clone owned GitHub repos and manage local repositories
     check      Check git status across all repositories
     newghrepo  Create GitHub repository for current project
     llm-setup  Set up AI development instruction files

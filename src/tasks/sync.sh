@@ -1,6 +1,6 @@
 show_sync_help() {
   cat <<EOF
-pbp sync - Clone user's GitHub repositories that aren't already cloned locally
+pbp sync - Clone user's GitHub repositories and manage local repositories
 
 USAGE:
     pbp sync [options] [directory]
@@ -18,7 +18,9 @@ OPTIONS:
 
 DESCRIPTION:
     By default, clones only repositories you own. Use --all to include organization
-    repos and collaborations. Uses GitHub CLI - requires 'gh auth login'.
+    repos and collaborations. After cloning, checks for local git repositories 
+    without GitHub remotes and offers to create GitHub repositories for them.
+    Uses GitHub CLI - requires 'gh auth login'.
 
 EXAMPLES:
     pbp sync                    # Clone missing owned repos to ~/Projects
@@ -196,5 +198,75 @@ sync_repos() {
   else
     echo
     success "All repositories are already cloned!"
+  fi
+  
+  # Check for local repositories without GitHub remotes
+  echo
+  info "Checking for local repositories without GitHub remotes..."
+  
+  local orphan_repos=()
+  
+  # Find all git repositories in sync directory
+  while IFS= read -r -d '' git_dir; do
+    local repo_dir
+    repo_dir=$(dirname "$git_dir")
+    local repo_name
+    repo_name=$(basename "$repo_dir")
+    
+    # Skip if this directory is the current pbproject repo
+    if [[ "$repo_dir" == "$sync_dir/pbproject" ]]; then
+      continue
+    fi
+    
+    # Check if it has a GitHub remote
+    if ! (cd "$repo_dir" && git remote get-url origin 2>/dev/null | grep -q "github.com"); then
+      orphan_repos+=("$repo_name")
+    fi
+  done < <(find "$sync_dir" -maxdepth 2 -name .git -type d -print0)
+  
+  if [[ ${#orphan_repos[@]} -gt 0 ]]; then
+    echo
+    info "Found ${#orphan_repos[@]} local repositories without GitHub remotes:"
+    for repo in "${orphan_repos[@]}"; do
+      echo "  → $repo"
+    done
+    
+    echo
+    read -p "Would you like to create GitHub repositories for these projects? (y/N): " -n 1 -r
+    echo
+    
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      for repo_name in "${orphan_repos[@]}"; do
+        echo
+        info "Processing: $repo_name"
+        echo "  Location: $sync_dir/$repo_name"
+        
+        read -p "  Create GitHub repository for '$repo_name'? (y/N/q): " -n 1 -r
+        echo
+        
+        case $REPLY in
+          [Yy])
+            echo "  Creating GitHub repository..."
+            if (cd "$sync_dir/$repo_name" && create_github_repo "$sync_dir/$repo_name"); then
+              success "  ✓ Created GitHub repository for $repo_name"
+            else
+              error "  ✗ Failed to create GitHub repository for $repo_name"
+            fi
+            ;;
+          [Qq])
+            info "  Skipping remaining repositories"
+            break
+            ;;
+          *)
+            info "  Skipped $repo_name"
+            ;;
+        esac
+      done
+    else
+      info "Skipped creating GitHub repositories"
+    fi
+  else
+    echo
+    success "All local repositories have GitHub remotes!"
   fi
 }
