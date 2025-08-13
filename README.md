@@ -20,18 +20,20 @@ pbp migrate .
 pbp migrate components/auth
 # → ~/Projects/auth with history
 
-# Check status of all your projects
+# Sync all your GitHub repos locally
+pbp sync
+# → Clones any missing repos from your GitHub
+
+# Check status of all your projects  
 pbp check
 # → Shows git status across ~/Projects
-
-# Skip history preservation (faster)
-pbp migrate . --no-history
 ```
 
 | Command | Description |
 |---------|-------------|
 | `pbp init <name>` | Create new project with basic structure |
 | `pbp migrate <folder\|.>` | Extract folder to new repo with history |
+| `pbp sync` | Clone all user GitHub repos that aren't cloned locally |
 | `pbp check` | Check git status across all repositories |
 | `pbp llm-setup` | Set up AI development instruction files |
 | `pbp newghrepo` | Create GitHub repo for current project |  
