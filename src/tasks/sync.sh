@@ -1,6 +1,6 @@
 show_sync_help() {
   cat <<EOF
-pbp sync - Clone all user GitHub repositories that aren't already cloned locally
+pbp sync - Clone user's GitHub repositories that aren't already cloned locally
 
 USAGE:
     pbp sync [options] [directory]
@@ -12,16 +12,18 @@ OPTIONS:
     --public     Clone only public repositories
     --private    Clone only private repositories  
     --active     Clone only recently active repositories (pushed within 6 months)
+    --all        Include all repos you have access to (orgs, collaborations, etc.)
     --dry-run    Show what would be cloned without actually cloning
     --help       Show this help
 
 DESCRIPTION:
-    Uses GitHub CLI to list all your repositories and clones any that aren't
-    already present in the target directory. Requires 'gh auth login'.
+    By default, clones only repositories you own. Use --all to include organization
+    repos and collaborations. Uses GitHub CLI - requires 'gh auth login'.
 
 EXAMPLES:
-    pbp sync                    # Clone all missing repos to ~/Projects
-    pbp sync --public           # Clone only public repos
+    pbp sync                    # Clone missing owned repos to ~/Projects
+    pbp sync --all              # Include org repos and collaborations
+    pbp sync --public           # Clone only public owned repos
     pbp sync --dry-run          # Show what would be cloned
     pbp sync ~/Development      # Clone to specific directory
 
@@ -36,6 +38,7 @@ sync_repos() {
   local private_only=false
   local active_only=false
   local dry_run=false
+  local all_repos=false
   
   # Parse arguments
   while [[ $# -gt 0 ]]; do
@@ -43,6 +46,7 @@ sync_repos() {
       --public) public_only=true; shift ;;
       --private) private_only=true; shift ;;
       --active) active_only=true; shift ;;
+      --all) all_repos=true; shift ;;
       --dry-run) dry_run=true; shift ;;
       --help) show_sync_help; return 0 ;;
       -*) error "Unknown option: $1. Use 'pbp sync --help' for usage." ;;
@@ -72,10 +76,18 @@ sync_repos() {
     query_params="visibility=private"
   fi
   
-  # Get list of user's repositories
-  info "Fetching repository list from GitHub..."
-  local repos_json
-  repos_json=$(gh api user/repos --paginate -q '.[] | {name, clone_url, private, pushed_at}' ${query_params:+--field "$query_params"})
+  # Get list of repositories
+  if [[ "$all_repos" == true ]]; then
+    info "Fetching all accessible repositories from GitHub..."
+    local repos_json
+    repos_json=$(gh api user/repos --paginate -q '.[] | {name, clone_url, private, pushed_at, owner: .owner.login}' ${query_params:+--field "$query_params"})
+  else
+    info "Fetching owned repositories from GitHub..."
+    local username
+    username=$(gh api user --jq .login)
+    local repos_json
+    repos_json=$(gh api user/repos --paginate -q '.[] | select(.owner.login == "'$username'") | {name, clone_url, private, pushed_at, owner: .owner.login}' ${query_params:+--field "$query_params"})
+  fi
   
   if [[ -z "$repos_json" ]]; then
     info "No repositories found"

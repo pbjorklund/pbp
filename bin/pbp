@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v3.2.0-dirty
-# Built: 2025-08-13T13:44:26Z
-PBP_VERSION='v3.2.0-dirty'
-PBP_BUILD_TIME='2025-08-13T13:44:26Z'
+# Version: v3.2.0-1-g6fe8dbd-dirty
+# Built: 2025-08-13T13:46:30Z
+PBP_VERSION='v3.2.0-1-g6fe8dbd-dirty'
+PBP_BUILD_TIME='2025-08-13T13:46:30Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
@@ -594,7 +594,7 @@ show_status() {
 # >>> /home/pbjorklund/Projects/pbproject/src/tasks/sync.sh
 show_sync_help() {
   cat <<EOF
-pbp sync - Clone all user GitHub repositories that aren't already cloned locally
+pbp sync - Clone user's GitHub repositories that aren't already cloned locally
 
 USAGE:
     pbp sync [options] [directory]
@@ -606,16 +606,18 @@ OPTIONS:
     --public     Clone only public repositories
     --private    Clone only private repositories  
     --active     Clone only recently active repositories (pushed within 6 months)
+    --all        Include all repos you have access to (orgs, collaborations, etc.)
     --dry-run    Show what would be cloned without actually cloning
     --help       Show this help
 
 DESCRIPTION:
-    Uses GitHub CLI to list all your repositories and clones any that aren't
-    already present in the target directory. Requires 'gh auth login'.
+    By default, clones only repositories you own. Use --all to include organization
+    repos and collaborations. Uses GitHub CLI - requires 'gh auth login'.
 
 EXAMPLES:
-    pbp sync                    # Clone all missing repos to ~/Projects
-    pbp sync --public           # Clone only public repos
+    pbp sync                    # Clone missing owned repos to ~/Projects
+    pbp sync --all              # Include org repos and collaborations
+    pbp sync --public           # Clone only public owned repos
     pbp sync --dry-run          # Show what would be cloned
     pbp sync ~/Development      # Clone to specific directory
 
@@ -630,6 +632,7 @@ sync_repos() {
   local private_only=false
   local active_only=false
   local dry_run=false
+  local all_repos=false
   
   # Parse arguments
   while [[ $# -gt 0 ]]; do
@@ -637,6 +640,7 @@ sync_repos() {
       --public) public_only=true; shift ;;
       --private) private_only=true; shift ;;
       --active) active_only=true; shift ;;
+      --all) all_repos=true; shift ;;
       --dry-run) dry_run=true; shift ;;
       --help) show_sync_help; return 0 ;;
       -*) error "Unknown option: $1. Use 'pbp sync --help' for usage." ;;
@@ -666,10 +670,18 @@ sync_repos() {
     query_params="visibility=private"
   fi
   
-  # Get list of user's repositories
-  info "Fetching repository list from GitHub..."
-  local repos_json
-  repos_json=$(gh api user/repos --paginate -q '.[] | {name, clone_url, private, pushed_at}' ${query_params:+--field "$query_params"})
+  # Get list of repositories
+  if [[ "$all_repos" == true ]]; then
+    info "Fetching all accessible repositories from GitHub..."
+    local repos_json
+    repos_json=$(gh api user/repos --paginate -q '.[] | {name, clone_url, private, pushed_at, owner: .owner.login}' ${query_params:+--field "$query_params"})
+  else
+    info "Fetching owned repositories from GitHub..."
+    local username
+    username=$(gh api user --jq .login)
+    local repos_json
+    repos_json=$(gh api user/repos --paginate -q '.[] | select(.owner.login == "'$username'") | {name, clone_url, private, pushed_at, owner: .owner.login}' ${query_params:+--field "$query_params"})
+  fi
   
   if [[ -z "$repos_json" ]]; then
     info "No repositories found"
@@ -787,7 +799,7 @@ $SCRIPT_NAME - Project lifecycle management tool
 USAGE:
     $SCRIPT_NAME init <project-name> [project-path]
     $SCRIPT_NAME migrate <folder-name|.> [source-project-path] [--no-history] [--force]
-    $SCRIPT_NAME sync [--public|--private|--active|--dry-run] [directory]
+    $SCRIPT_NAME     sync [--public|--private|--active|--all|--dry-run] [directory]
     $SCRIPT_NAME check [directory]
     $SCRIPT_NAME newghrepo [project-path]
     $SCRIPT_NAME llm-setup [--status]
@@ -797,7 +809,7 @@ USAGE:
 COMMANDS:
     init       Create new project with basic structure
     migrate    Extract folder to new repo with history preservation
-    sync       Clone all user GitHub repos that aren't already cloned
+    sync       Clone owned GitHub repos that aren't already cloned
     check      Check git status across all repositories
     newghrepo  Create GitHub repository for current project
     llm-setup  Set up AI development instruction files
@@ -807,8 +819,9 @@ FLAGS:
     migrate --no-history   Move without preserving history
     migrate --force        Bypass safety checks
     sync --public          Clone only public repos
-    sync --private         Clone only private repos  
+    sync --private         Clone only private repos
     sync --active          Clone only recently active repos
+    sync --all             Include org repos and collaborations
     sync --dry-run         Show what would be cloned
 
 ENVIRONMENT:

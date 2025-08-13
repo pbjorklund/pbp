@@ -5,7 +5,7 @@ $SCRIPT_NAME - Project lifecycle management tool
 USAGE:
     $SCRIPT_NAME init <project-name> [project-path]
     $SCRIPT_NAME migrate <folder-name|.> [source-project-path] [--no-history] [--force]
-    $SCRIPT_NAME sync [--public|--private|--active|--dry-run] [directory]
+    $SCRIPT_NAME     sync [--public|--private|--active|--all|--dry-run] [directory]
     $SCRIPT_NAME check [directory]
     $SCRIPT_NAME newghrepo [project-path]
     $SCRIPT_NAME llm-setup [--status]
@@ -15,7 +15,7 @@ USAGE:
 COMMANDS:
     init       Create new project with basic structure
     migrate    Extract folder to new repo with history preservation
-    sync       Clone all user GitHub repos that aren't already cloned
+    sync       Clone owned GitHub repos that aren't already cloned
     check      Check git status across all repositories
     newghrepo  Create GitHub repository for current project
     llm-setup  Set up AI development instruction files
@@ -25,8 +25,9 @@ FLAGS:
     migrate --no-history   Move without preserving history
     migrate --force        Bypass safety checks
     sync --public          Clone only public repos
-    sync --private         Clone only private repos  
+    sync --private         Clone only private repos
     sync --active          Clone only recently active repos
+    sync --all             Include org repos and collaborations
     sync --dry-run         Show what would be cloned
 
 ENVIRONMENT:
