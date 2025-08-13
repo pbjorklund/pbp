@@ -12,9 +12,9 @@ migrate_folder() {
 
   if [[ "$folder_name" == "." ]]; then
     current_dir="$(basename "$source_path")"; new_project_path="$PROJECTS_DIR/$current_dir"
-    # Only block when at repo root under Projects and not forced
-    if [[ "$source_path" == "$PROJECTS_DIR"/* ]] && [[ -n "$repo_root" ]] && [[ "$source_path" == "$repo_root" ]] && [[ "$force" != true ]]; then
-      error "Refusing to migrate repo root under ~/Projects. Use a subfolder or --force."
+    # Only block when at repo root that's directly under ~/Projects (not nested)
+    if [[ -n "$repo_root" ]] && [[ "$source_path" == "$repo_root" ]] && [[ "$(dirname "$repo_root")" == "$PROJECTS_DIR" ]] && [[ "$force" != true ]]; then
+      error "Refusing to migrate repo root directly under ~/Projects. Use a subfolder or --force."
     fi
     if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
 

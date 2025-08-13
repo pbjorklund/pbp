@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBPROJECT_VERSION="${PBPROJECT_VERSION:-unknown}"
 PBPROJECT_BUILD_TIME="${PBPROJECT_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbproject version: ${PBPROJECT_VERSION} (${PBPROJECT_BUILD_TIME})"; }
-# Version: v1.0.4-dirty
-# Built: 2025-08-13T12:48:11Z
-PBPROJECT_VERSION='v1.0.4-dirty'
-PBPROJECT_BUILD_TIME='2025-08-13T12:48:11Z'
+# Version: v1.0.5-dirty
+# Built: 2025-08-13T12:50:33Z
+PBPROJECT_VERSION='v1.0.5-dirty'
+PBPROJECT_BUILD_TIME='2025-08-13T12:50:33Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
@@ -113,9 +113,9 @@ migrate_folder() {
 
   if [[ "$folder_name" == "." ]]; then
     current_dir="$(basename "$source_path")"; new_project_path="$PROJECTS_DIR/$current_dir"
-    # Only block when at repo root under Projects and not forced
-    if [[ "$source_path" == "$PROJECTS_DIR"/* ]] && [[ -n "$repo_root" ]] && [[ "$source_path" == "$repo_root" ]] && [[ "$force" != true ]]; then
-      error "Refusing to migrate repo root under ~/Projects. Use a subfolder or --force."
+    # Only block when at repo root that's directly under ~/Projects (not nested)
+    if [[ -n "$repo_root" ]] && [[ "$source_path" == "$repo_root" ]] && [[ "$(dirname "$repo_root")" == "$PROJECTS_DIR" ]] && [[ "$force" != true ]]; then
+      error "Refusing to migrate repo root directly under ~/Projects. Use a subfolder or --force."
     fi
     if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
 
