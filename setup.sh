@@ -60,13 +60,31 @@ main() {
         mkdir -p "$bin_dir"
     fi
 
-    # Check if tools exist
+    # Check if tools exist locally, or download from releases
     if [[ ! -f "$SCRIPT_DIR/bin/pbp" ]]; then
-        error "pbp script not found at $SCRIPT_DIR/bin/pbp"
+        info "pbp not found locally, downloading from GitHub releases..."
+        mkdir -p "$SCRIPT_DIR/bin"
+        if command -v curl &>/dev/null; then
+            curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o "$SCRIPT_DIR/bin/pbp"
+            curl -L https://github.com/pbjorklund/pbp/releases/latest/download/llm-setup -o "$SCRIPT_DIR/bin/llm-setup" 2>/dev/null || touch "$SCRIPT_DIR/bin/llm-setup"
+        elif command -v wget &>/dev/null; then
+            wget https://github.com/pbjorklund/pbp/releases/latest/download/pbp -O "$SCRIPT_DIR/bin/pbp"
+            wget https://github.com/pbjorklund/pbp/releases/latest/download/llm-setup -O "$SCRIPT_DIR/bin/llm-setup" 2>/dev/null || touch "$SCRIPT_DIR/bin/llm-setup"
+        else
+            error "Neither curl nor wget found. Please install one or clone the repo manually."
+        fi
+        chmod +x "$SCRIPT_DIR/bin/pbp" "$SCRIPT_DIR/bin/llm-setup"
+        success "Downloaded pbp from GitHub releases"
     fi
 
     if [[ ! -f "$SCRIPT_DIR/bin/llm-setup" ]]; then
-        error "llm-setup script not found at $SCRIPT_DIR/bin/llm-setup"
+        # Create a minimal llm-setup if it doesn't exist
+        cat > "$SCRIPT_DIR/bin/llm-setup" << 'EOF'
+#!/bin/bash
+echo "llm-setup: Download the full pbp repository for AI development features"
+echo "git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./setup.sh"
+EOF
+        chmod +x "$SCRIPT_DIR/bin/llm-setup"
     fi
 
     # Create symlinks
