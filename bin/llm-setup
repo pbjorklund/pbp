@@ -72,8 +72,6 @@ check_pbproject() {
 
     local missing_files=()
     [[ ! -f "$PBPROJECT_ROOT/project-templates/LLM_INSTRUCTIONS.md" ]] && missing_files+=("LLM_INSTRUCTIONS.md")
-    [[ ! -d "$PBPROJECT_ROOT/project-templates/github" ]] && missing_files+=("github/")
-    [[ ! -d "$PBPROJECT_ROOT/project-templates/roo" ]] && missing_files+=("roo/")
 
     if [[ ${#missing_files[@]} -gt 0 ]]; then
         error "Missing template files in pbproject: ${missing_files[*]}"
@@ -142,13 +140,13 @@ setup_llm_files() {
     ln -sf "LLM_INSTRUCTIONS.md" "GEMINI.md"
     success "📄 Created GEMINI.md (symlink to LLM_INSTRUCTIONS.md)"
     
-    # Copy directory structures and create symlinks for instruction files
-    cp -r "$PBPROJECT_ROOT/project-templates/github" ".github"
+    # Create directory structures and symlinks for instruction files
+    mkdir -p ".github"
     ln -sf "../LLM_INSTRUCTIONS.md" ".github/copilot-instructions.md"
     success "📁 Created .github/ with symlinked copilot-instructions.md"
     
-    cp -r "$PBPROJECT_ROOT/project-templates/roo" ".roo"
-    ln -sf "../LLM_INSTRUCTIONS.md" ".roo/rules/00-general.md"
+    mkdir -p ".roo/rules"
+    ln -sf "../../LLM_INSTRUCTIONS.md" ".roo/rules/00-general.md"
     success "📁 Created .roo/ with symlinked rules/00-general.md"
     
     echo
