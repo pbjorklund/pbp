@@ -6,8 +6,12 @@ mkdir -p "$(dirname "$out")"
 {
   cat "$ROOT_DIR/src/header.sh"
   # embed version and git sha
-  echo "# Version: ${VERSION:-$(git -C "$ROOT_DIR" describe --tags --always --dirty 2>/dev/null || echo dev)}"
-  echo "# Built: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  ver="${VERSION:-$(git -C "$ROOT_DIR" describe --tags --always --dirty 2>/dev/null || echo dev)}"
+  ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "# Version: $ver"
+  echo "# Built: $ts"
+  echo "PBPROJECT_VERSION='$ver'"
+  echo "PBPROJECT_BUILD_TIME='$ts'"
   echo
   for f in "$ROOT_DIR/src/lib"/*.sh "$ROOT_DIR/src/tasks"/*.sh; do
     [[ -f "$f" ]] || continue

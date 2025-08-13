@@ -12,6 +12,7 @@ EOF
 }
 
 main() {
+  print_version_note
   case "${1:-}" in
     init) shift; init_project "$@";;
     status) shift; show_status "$@";;
