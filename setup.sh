@@ -81,8 +81,10 @@ main() {
         # Create a minimal llm-setup if it doesn't exist
         cat > "$SCRIPT_DIR/bin/llm-setup" << 'EOF'
 #!/bin/bash
-echo "llm-setup: Download the full pbp repository for AI development features"
+echo "llm-setup: AI development file management"
+echo "This feature requires the full repository. Install from source:"
 echo "git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./setup.sh"
+exit 1
 EOF
         chmod +x "$SCRIPT_DIR/bin/llm-setup"
     fi
