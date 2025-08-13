@@ -17,7 +17,7 @@ ARGUMENTS:
     bin-directory    Directory to create symlinks in (default: ~/.local/bin)
 
 DESCRIPTION:
-    Creates symlinks for pbp and llm-setup from this repo to your local bin directory.
+    Creates symlink for pbp from this repo to your local bin directory.
     For development use only - symlinks to repo files for easy testing of changes.
 
 EXAMPLES:
@@ -60,19 +60,20 @@ main() {
         mkdir -p "$bin_dir"
     fi
 
-    # Check if tools exist locally, or download from releases
+    # Check if pbp exists locally, or download from releases  
     if [[ ! -f "$SCRIPT_DIR/bin/pbp" ]]; then
         info "pbp not found locally, downloading from GitHub releases..."
         mkdir -p "$SCRIPT_DIR/bin"
         if command -v curl &>/dev/null; then
             curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o "$SCRIPT_DIR/bin/pbp"
-            curl -L https://github.com/pbjorklund/pbp/releases/latest/download/llm-setup -o "$SCRIPT_DIR/bin/llm-setup" 2>/dev/null || touch "$SCRIPT_DIR/bin/llm-setup"
         elif command -v wget &>/dev/null; then
             wget https://github.com/pbjorklund/pbp/releases/latest/download/pbp -O "$SCRIPT_DIR/bin/pbp"
-            wget https://github.com/pbjorklund/pbp/releases/latest/download/llm-setup -O "$SCRIPT_DIR/bin/llm-setup" 2>/dev/null || touch "$SCRIPT_DIR/bin/llm-setup"
         else
             error "Neither curl nor wget found. Please install one or clone the repo manually."
         fi
+        chmod +x "$SCRIPT_DIR/bin/pbp"
+        success "Downloaded pbp from GitHub releases"
+    fi
         chmod +x "$SCRIPT_DIR/bin/pbp" "$SCRIPT_DIR/bin/llm-setup"
         success "Downloaded pbp from GitHub releases"
     fi
@@ -95,7 +96,7 @@ EOF
     # Remove existing symlinks (including old ones)
     [[ -L "$bin_dir/pbp" ]] && rm "$bin_dir/pbp"
     [[ -L "$bin_dir/pbproject" ]] && rm "$bin_dir/pbproject" && info "Removed old pbproject symlink"
-    [[ -L "$bin_dir/llm-setup" ]] && rm "$bin_dir/llm-setup"
+    [[ -L "$bin_dir/llm-setup" ]] && rm "$bin_dir/llm-setup" && info "Removed old llm-setup symlink (now pbp llm-setup)"
     [[ -L "$bin_dir/llm-link" ]] && rm "$bin_dir/llm-link" && info "Removed old llm-link symlink"
 
     # Check for existing non-symlink files
@@ -103,24 +104,22 @@ EOF
         error "File $bin_dir/pbp already exists and is not a symlink. Remove it manually first."
     fi
 
-    if [[ -f "$bin_dir/llm-setup" ]] && [[ ! -L "$bin_dir/llm-setup" ]]; then
-        error "File $bin_dir/llm-setup already exists and is not a symlink. Remove it manually first."
-    fi
-
     if [[ -f "$bin_dir/pbproject" ]] && [[ ! -L "$bin_dir/pbproject" ]]; then
         info "Warning: Found old pbproject file (not symlink) at $bin_dir/pbproject"
         info "Please remove it manually: rm $bin_dir/pbproject"
     fi
 
-    # Create the symlinks
+    if [[ -f "$bin_dir/llm-setup" ]] && [[ ! -L "$bin_dir/llm-setup" ]]; then
+        info "Warning: Found old llm-setup file (not symlink) at $bin_dir/llm-setup"
+        info "llm-setup is now 'pbp llm-setup'. Remove with: rm $bin_dir/llm-setup"
+    fi
+
+    # Create the symlink
     ln -s "$SCRIPT_DIR/bin/pbp" "$bin_dir/pbp"
     success "Created symlink: $bin_dir/pbp -> $SCRIPT_DIR/bin/pbp"
 
-    ln -s "$SCRIPT_DIR/bin/llm-setup" "$bin_dir/llm-setup"
-    success "Created symlink: $bin_dir/llm-setup -> $SCRIPT_DIR/bin/llm-setup"
-
-    # Make sure scripts are executable
-    chmod +x "$SCRIPT_DIR/bin/pbp" "$SCRIPT_DIR/bin/llm-setup"
+    # Make sure script is executable
+    chmod +x "$SCRIPT_DIR/bin/pbp"
 
     # Check if bin directory is in PATH
     if [[ ":$PATH:" != *":$bin_dir:"* ]]; then
@@ -132,10 +131,10 @@ EOF
         info "Then reload your shell or run: source ~/.bashrc"
     else
         echo
-        success "Setup complete! You can now use 'pbp' and 'llm-setup' commands."
+        success "Setup complete! You can now use 'pbp' commands."
     fi
 
-    # Test the commands
+    # Test the command
     echo
     info "Testing installation:"
     if "$bin_dir/pbp" --help >/dev/null 2>&1; then
@@ -144,16 +143,11 @@ EOF
         error "pbp command failed to run"
     fi
 
-    if "$bin_dir/llm-setup" --help >/dev/null 2>&1; then
-        success "llm-setup command works"
-    else
-        error "llm-setup command failed to run"
-    fi
-
     echo
     info "Quick start:"
     echo "    pbp init my-new-project"
     echo "    pbp migrate some-folder"
+    echo "    pbp llm-setup"
 }
 
 main "$@"

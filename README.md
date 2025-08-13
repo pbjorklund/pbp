@@ -33,11 +33,13 @@ pbp migrate . --no-history
 |---------|-------------|
 | `pbp init <name>` | Create new project with basic structure |
 | `pbp migrate <folder\|.>` | Extract folder to new repo with history |
+| `pbp llm-setup` | Set up AI development instruction files |
 | `pbp newghrepo` | Create GitHub repo for current project |  
 | `pbp status` | Show project and git status |
 
 **Environment:**
 - `PBP_PROJECTS_DIR` - Where to create new projects (default: `~/Projects`)
+- `PBP_LLM_TEMPLATE` - Custom LLM instruction template file
 
 ## Requirements
 
