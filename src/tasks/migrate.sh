@@ -26,7 +26,7 @@ migrate_folder() {
       if [[ "$source_path" == "$repo_root" ]]; then rel_subdir="."; else rel_subdir="${source_path#$repo_root/}"; fi
       if [[ "$rel_subdir" == "." ]]; then error "At repo root; specify a subfolder or use --force with --no-history"; fi
       info "Extracting history for '$rel_subdir' from $repo_root"
-      local tmp_branch=pbproject_split_$(date +%s)
+      local tmp_branch=pbp_split_$(date +%s)
       git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
       mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
       git -C "$repo_root" branch -D "$tmp_branch" || true
@@ -44,7 +44,7 @@ migrate_folder() {
     else
       local rel_subdir="${source_folder#$repo_root/}"
       info "Extracting history for '$rel_subdir' from $repo_root"
-      local tmp_branch=pbproject_split_$(date +%s)
+      local tmp_branch=pbp_split_$(date +%s)
       git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
       mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
       git -C "$repo_root" branch -D "$tmp_branch" || true

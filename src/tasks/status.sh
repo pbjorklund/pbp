@@ -24,13 +24,13 @@ show_status() {
         else echo "   Status: ❌ Repository not accessible or doesn't exist"; fi
       else echo "   Repository: $repo_info (GitHub CLI not available for detailed info)"; fi
     fi
-  else echo "   Remote: ❌ No remote configured"; echo; echo "💡 To create GitHub repository: pbproject newghrepo"; fi
+  else echo "   Remote: ❌ No remote configured"; echo; echo "💡 To create GitHub repository: pbp newghrepo"; fi
   echo
   echo "📋 Project Structure:"; [[ -f README.md ]] && echo "   ✅ README.md" || echo "   ❌ README.md missing"; [[ -f .gitignore ]] && echo "   ✅ .gitignore" || echo "   ❌ .gitignore missing"
   if [[ -f package.json ]]; then echo "   📦 package.json (Node.js project)"; elif [[ -f Cargo.toml ]]; then echo "   🦀 Cargo.toml (Rust project)"; elif [[ -f pyproject.toml ]] || [[ -f requirements.txt ]]; then echo "   🐍 Python project"; elif [[ -f go.mod ]]; then echo "   🐹 go.mod (Go project)"; fi
   echo
   echo "🤖 AI Development Support:";
   if command -v llm-setup &>/dev/null; then llm-setup --status;
-  elif [[ -x "$PBPROJECT_ROOT/bin/llm-setup" ]]; then "$PBPROJECT_ROOT/bin/llm-setup" --status;
+  elif [[ -x "$PBP_ROOT/bin/llm-setup" ]]; then "$PBP_ROOT/bin/llm-setup" --status;
   else echo "   ❌ llm-setup not found - LLM instruction files not configured"; echo "   💡 Run 'llm-setup' to add AI development support"; fi
 }

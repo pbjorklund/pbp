@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
-"$repo_root/bin/pbproject-build" >/dev/null
+"$repo_root/bin/pbp-build" >/dev/null
 # Auto-stage rebuilt artifact for a smooth workflow
-if ! git diff --quiet -- "$repo_root/bin/pbproject"; then
-  git add "$repo_root/bin/pbproject"
+if ! git diff --quiet -- "$repo_root/bin/pbp"; then
+  git add "$repo_root/bin/pbp"
 fi

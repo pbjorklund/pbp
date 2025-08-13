@@ -41,10 +41,10 @@ new_tag="v${MA}.${MI}.${PA}"
 
 # Build with VERSION baked into artifact
 export VERSION="$new_tag"
-chmod +x bin/pbproject-build
-./bin/pbproject-build >/dev/null
+chmod +x bin/pbp-build
+./bin/pbp-build >/dev/null
 
-git add bin/pbproject
+git add bin/pbp
 # Do not create a new commit; tag the latest commit
 
 # Tag with latest commit message as annotation

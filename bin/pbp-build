@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-out="$ROOT_DIR/bin/pbproject"
+out="$ROOT_DIR/bin/pbp"
 mkdir -p "$(dirname "$out")"
 {
   cat "$ROOT_DIR/src/header.sh"
@@ -10,8 +10,8 @@ mkdir -p "$(dirname "$out")"
   ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo "# Version: $ver"
   echo "# Built: $ts"
-  echo "PBPROJECT_VERSION='$ver'"
-  echo "PBPROJECT_BUILD_TIME='$ts'"
+  echo "PBP_VERSION='$ver'"
+  echo "PBP_BUILD_TIME='$ts'"
   echo
   for f in "$ROOT_DIR/src/lib"/*.sh "$ROOT_DIR/src/tasks"/*.sh; do
     [[ -f "$f" ]] || continue

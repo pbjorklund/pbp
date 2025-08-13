@@ -2,22 +2,22 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-# Generated bundle header; do not edit in bin/pbproject
+# Generated bundle header; do not edit in bin/pbp
 # Source modules are in src/
 
-PBPROJECT_VERSION="${PBPROJECT_VERSION:-unknown}"
-PBPROJECT_BUILD_TIME="${PBPROJECT_BUILD_TIME:-unknown}"
-print_version_note() { echo "pbproject version: ${PBPROJECT_VERSION} (${PBPROJECT_BUILD_TIME})"; }
-# Version: v1.0.5-dirty
-# Built: 2025-08-13T12:50:33Z
-PBPROJECT_VERSION='v1.0.5-dirty'
-PBPROJECT_BUILD_TIME='2025-08-13T12:50:33Z'
+PBP_VERSION="${PBP_VERSION:-unknown}"
+PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
+print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
+# Version: v1.0.5-1-ga7c31a0-dirty
+# Built: 2025-08-13T12:54:39Z
+PBP_VERSION='v1.0.5-1-ga7c31a0-dirty'
+PBP_BUILD_TIME='2025-08-13T12:54:39Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
-PBPROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+PBP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_NAME="$(basename "$0")"
 PROJECTS_DIR="$HOME/Projects"
 
@@ -74,10 +74,10 @@ create_github_repo() {
 }
 
 # >>> /home/pbjorklund/Projects/pbproject/src/tasks/init.sh
-check_pbproject() {
-  if [[ ! -d "$PBPROJECT_ROOT" ]]; then error "pbproject directory not found at $PBPROJECT_ROOT"; fi
-  if [[ ! -f "$PBPROJECT_ROOT/bin/llm-setup" ]]; then error "llm-setup script not found at $PBPROJECT_ROOT/bin/llm-setup"; fi
-  if [[ ! -d "$PBPROJECT_ROOT/project-templates" ]]; then error "project-templates directory not found at $PBPROJECT_ROOT/project-templates"; fi
+check_pbp() {
+  if [[ ! -d "$PBP_ROOT" ]]; then error "pbp directory not found at $PBP_ROOT"; fi
+  if [[ ! -f "$PBP_ROOT/bin/llm-setup" ]]; then error "llm-setup script not found at $PBP_ROOT/bin/llm-setup"; fi
+  if [[ ! -d "$PBP_ROOT/project-templates" ]]; then error "project-templates directory not found at $PBP_ROOT/project-templates"; fi
 }
 
 init_project() {
@@ -89,12 +89,12 @@ init_project() {
   else
     project_path="${2:-$PWD/$project_name}"; display_name="$project_name"
   fi
-  check_pbproject
+  check_pbp
   info "Creating project directory: $project_path"; mkdir -p "$project_path"; cd "$project_path"
   if [[ ! -d .git ]]; then info "Initializing git repository"; git init; success "Git repository initialized"; else info "Git repository already exists"; fi
   info "Basic project structure created"
-  if [[ ! -f README.md ]]; then sed "s/{{PROJECT_NAME}}/$display_name/g" "$PBPROJECT_ROOT/project-templates/README.md" > README.md; success "Created README.md"; fi
-  if [[ ! -f .gitignore ]]; then cp "$PBPROJECT_ROOT/project-templates/.gitignore" .gitignore; success "Created .gitignore"; fi
+  if [[ ! -f README.md ]]; then sed "s/{{PROJECT_NAME}}/$display_name/g" "$PBP_ROOT/project-templates/README.md" > README.md; success "Created README.md"; fi
+  if [[ ! -f .gitignore ]]; then cp "$PBP_ROOT/project-templates/.gitignore" .gitignore; success "Created .gitignore"; fi
   success "Project '$display_name' initialized at $project_path"
 }
 
@@ -127,7 +127,7 @@ migrate_folder() {
       if [[ "$source_path" == "$repo_root" ]]; then rel_subdir="."; else rel_subdir="${source_path#$repo_root/}"; fi
       if [[ "$rel_subdir" == "." ]]; then error "At repo root; specify a subfolder or use --force with --no-history"; fi
       info "Extracting history for '$rel_subdir' from $repo_root"
-      local tmp_branch=pbproject_split_$(date +%s)
+      local tmp_branch=pbp_split_$(date +%s)
       git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
       mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
       git -C "$repo_root" branch -D "$tmp_branch" || true
@@ -145,7 +145,7 @@ migrate_folder() {
     else
       local rel_subdir="${source_folder#$repo_root/}"
       info "Extracting history for '$rel_subdir' from $repo_root"
-      local tmp_branch=pbproject_split_$(date +%s)
+      local tmp_branch=pbp_split_$(date +%s)
       git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
       mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
       git -C "$repo_root" branch -D "$tmp_branch" || true
@@ -184,14 +184,14 @@ show_status() {
         else echo "   Status: ❌ Repository not accessible or doesn't exist"; fi
       else echo "   Repository: $repo_info (GitHub CLI not available for detailed info)"; fi
     fi
-  else echo "   Remote: ❌ No remote configured"; echo; echo "💡 To create GitHub repository: pbproject newghrepo"; fi
+  else echo "   Remote: ❌ No remote configured"; echo; echo "💡 To create GitHub repository: pbp newghrepo"; fi
   echo
   echo "📋 Project Structure:"; [[ -f README.md ]] && echo "   ✅ README.md" || echo "   ❌ README.md missing"; [[ -f .gitignore ]] && echo "   ✅ .gitignore" || echo "   ❌ .gitignore missing"
   if [[ -f package.json ]]; then echo "   📦 package.json (Node.js project)"; elif [[ -f Cargo.toml ]]; then echo "   🦀 Cargo.toml (Rust project)"; elif [[ -f pyproject.toml ]] || [[ -f requirements.txt ]]; then echo "   🐍 Python project"; elif [[ -f go.mod ]]; then echo "   🐹 go.mod (Go project)"; fi
   echo
   echo "🤖 AI Development Support:";
   if command -v llm-setup &>/dev/null; then llm-setup --status;
-  elif [[ -x "$PBPROJECT_ROOT/bin/llm-setup" ]]; then "$PBPROJECT_ROOT/bin/llm-setup" --status;
+  elif [[ -x "$PBP_ROOT/bin/llm-setup" ]]; then "$PBP_ROOT/bin/llm-setup" --status;
   else echo "   ❌ llm-setup not found - LLM instruction files not configured"; echo "   💡 Run 'llm-setup' to add AI development support"; fi
 }
 

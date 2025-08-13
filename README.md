@@ -1,10 +1,10 @@
-# pbproject
+# pbp
 
 CLI tools for project management and AI assistant configuration.
 
 ## What it does
 
-**pbproject**: Project lifecycle management
+**pbp**: Project lifecycle management
 - `init` - Create new project with basic structure 
 - `migrate` - Extract folders to new repos with history preservation (git subtree)
 - `newghrepo` - Create GitHub repo for current project
@@ -21,16 +21,16 @@ Each command shows the version and build time when executed.
 ### From GitHub Release (Recommended)
 ```bash
 # Download latest release assets
-curl -L https://github.com/pbjorklund/pbproject/releases/latest/download/setup.sh -o setup.sh
-curl -L https://github.com/pbjorklund/pbproject/releases/latest/download/pbproject -o pbproject
-chmod +x pbproject setup.sh
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh -o setup.sh
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o pbp
+chmod +x pbp setup.sh
 ./setup.sh
 ```
 
 ### From Source
 ```bash
-git clone https://github.com/pbjorklund/pbproject.git
-cd pbproject
+git clone https://github.com/pbjorklund/pbp.git
+cd pbp
 ./setup.sh
 ```
 
@@ -42,25 +42,25 @@ cd pbproject
 
 ## Commands
 
-### `pbproject init`
+### `pbp init`
 Create new project with basic structure:
 ```bash
-pbproject init my-tool              # Creates ./my-tool/
-pbproject init my-tool ~/custom/    # Creates ~/custom/my-tool/
-pbproject init .                    # Initialize current directory
+pbp init my-tool              # Creates ./my-tool/
+pbp init my-tool ~/custom/    # Creates ~/custom/my-tool/
+pbp init .                    # Initialize current directory
 ```
 
-### `pbproject migrate` 
+### `pbp migrate` 
 Extract folders into new repos with history preservation using git subtree:
 
 ```bash
 # From repo subdirectory - extract current subdir
 cd ~/my-experiments/useful_script
-pbproject migrate .
+pbp migrate .
 # → Creates ~/Projects/useful_script with git history
 
 # Extract specific folder from source repo
-pbproject migrate some_folder ~/path/to/source-repo
+pbp migrate some_folder ~/path/to/source-repo
 # → Creates ~/Projects/some_folder with git history
 
 # Flags:
@@ -70,15 +70,15 @@ pbproject migrate some_folder ~/path/to/source-repo
 
 **How history works**: Uses `git subtree split` to preserve commits that touched the target folder, creating a clean repo with relevant history.
 
-### `pbproject newghrepo`
+### `pbp newghrepo`
 Create GitHub repository for current project:
 ```bash
 cd my-project
-pbproject newghrepo
+pbp newghrepo
 # Creates private repo, sets remote, pushes code
 ```
 
-### `pbproject status`
+### `pbp status`
 Show project status, git info, GitHub sync status, and AI file configuration.
 
 ## Development Workflow
@@ -109,8 +109,8 @@ llm-setup
 ## Architecture
 
 - **Source**: Modular shell scripts in `src/`
-- **Distribution**: Single-file `bin/pbproject` (built from src/)
-- **Build**: `bin/pbproject-build` concatenates src/* with version info
+- **Distribution**: Single-file `bin/pbp` (built from src/)
+- **Build**: `bin/pbp-build` concatenates src/* with version info
 - **CI**: GitHub Actions builds on push; creates releases on tags
 - **Local**: Pre-commit hook auto-rebuilds and stages artifact
 

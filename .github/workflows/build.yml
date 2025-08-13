@@ -20,13 +20,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build bundled script
         run: |
-          chmod +x bin/pbproject-build
-          ./bin/pbproject-build
+          chmod +x bin/pbp-build
+          ./bin/pbp-build
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pbproject
-          path: bin/pbproject
+          name: pbp
+          path: bin/pbp
   release:
     if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''
     needs: build
@@ -45,9 +45,9 @@ jobs:
           fi
       - name: Build
         run: |
-          chmod +x bin/pbproject-build
-          ./bin/pbproject-build
-          echo "$(sha256sum bin/pbproject | awk '{print $1}')  pbproject" > checksums.txt
+          chmod +x bin/pbp-build
+          ./bin/pbp-build
+          echo "$(sha256sum bin/pbp | awk '{print $1}')  pbp" > checksums.txt
           echo "$(sha256sum setup.sh | awk '{print $1}')  setup.sh" >> checksums.txt
       - name: Compute release notes
         id: notes
@@ -74,6 +74,6 @@ jobs:
           name: ${{ steps.notes.outputs.title }}
           body: ${{ steps.notes.outputs.body }}
           files: |
-            bin/pbproject
+            bin/pbp
             setup.sh
             checksums.txt
