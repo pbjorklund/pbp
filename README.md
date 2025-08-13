@@ -1,117 +1,101 @@
 # pbp
 
-CLI tools for project management and AI assistant configuration.
+🚀 **Project lifecycle management** - Extract folders from monorepos into focused projects with preserved git history.
 
-## What it does
+## Features
 
-**pbp**: Project lifecycle management
-- `init` - Create new project with basic structure 
-- `migrate` - Extract folders to new repos with history preservation (git subtree)
-- `newghrepo` - Create GitHub repo for current project
-- `status` - Show project status and configuration
+- **Smart Migration** - Extract any folder into a new repo with complete git history
+- **Zero Dependencies** - Works with standard git installation (no subtree required)  
+- **Auto GitHub Integration** - Creates repos, sets remotes, pushes code automatically
+- **AI Development Ready** - Sets up instruction files for Claude, GitHub Copilot, etc.
+- **Version Tracking** - Shows version/build info on every command
 
-**llm-setup**: AI instruction file management
-- `llm-setup` - Set up AI instruction files (LLM_INSTRUCTIONS.md, CLAUDE.md, etc.)
-- `llm-setup --status` - Show which files are present/missing
+## Quick Start
 
-Each command shows the version and build time when executed.
+```bash
+# Install
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh | bash
+
+# Extract a folder from your current repo
+cd my-monorepo/useful-component
+pbp migrate .
+# → Creates ~/Projects/useful-component with git history + GitHub repo
+
+# Or extract a specific folder  
+pbp migrate components/auth
+# → Creates ~/Projects/auth with history
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `pbp init <name>` | Create new project with basic structure |
+| `pbp migrate <folder\|.>` | Extract folder to new repo with history |
+| `pbp newghrepo` | Create GitHub repo for current project |  
+| `pbp status` | Show project and git status |
+
+## Migration Examples
+
+```bash
+# Extract current directory (you're in a subdirectory of a repo)
+cd ~/experiments/batch-processor  
+pbp migrate .
+# → ~/Projects/batch-processor with full git history
+
+# Extract specific component
+pbp migrate src/auth-service
+# → ~/Projects/auth-service  
+
+# Move without preserving history (faster)
+pbp migrate . --no-history
+```
+
+**What happens:**
+1. Extracts folder with relevant git history using built-in git commands
+2. Removes folder from source repo and commits the deletion
+3. Creates new repo under `~/Projects/`
+4. Sets up GitHub repo and pushes code
+5. You end up in the new project directory
 
 ## Installation
 
-### From GitHub Release (Recommended)
+### One-liner (Recommended)
 ```bash
-# Download latest release assets
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh | bash
+```
+
+### Manual Install
+```bash
+# Download assets
 curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh -o setup.sh
 curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o pbp
-chmod +x pbp setup.sh
-./setup.sh
+chmod +x pbp setup.sh && ./setup.sh
 ```
 
 ### From Source
 ```bash
-git clone https://github.com/pbjorklund/pbp.git
-cd pbp
-./setup.sh
+git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./setup.sh
 ```
 
-### Requirements
-- bash, git (built-in)
-- GitHub CLI (`gh`) for GitHub operations
-  - Install: `dnf install gh` or `brew install gh`
-  - Auth: `gh auth login`
+## Requirements
 
-## Commands
+- **bash, git** - Standard on all systems
+- **GitHub CLI** - For GitHub operations: `gh auth login`
+  - Install: `dnf install gh` (Fedora) or `brew install gh` (macOS)
 
-### `pbp init`
-Create new project with basic structure:
-```bash
-pbp init my-tool              # Creates ./my-tool/
-pbp init my-tool ~/custom/    # Creates ~/custom/my-tool/
-pbp init .                    # Initialize current directory
-```
-
-### `pbp migrate` 
-Extract folders into new repos with history preservation using git subtree:
+## Contributing
 
 ```bash
-# From repo subdirectory - extract current subdir
-cd ~/my-experiments/useful_script
-pbp migrate .
-# → Creates ~/Projects/useful_script with git history
+# Setup for development
+git clone https://github.com/pbjorklund/pbp.git && cd pbp
+./setup.sh && git config core.hooksPath .githooks
 
-# Extract specific folder from source repo
-pbp migrate some_folder ~/path/to/source-repo
-# → Creates ~/Projects/some_folder with git history
+# Make changes to src/
+# Pre-commit hook auto-builds bin/pbp
 
-# Flags:
-# --no-history    Move without preserving git history
-# --force         Bypass safety checks (e.g., repo root migration)
+# Release
+./publish.sh patch  # or minor, major
 ```
 
-**How history works**: Uses `git subtree split` to preserve commits that touched the target folder, creating a clean repo with relevant history.
-
-### `pbp newghrepo`
-Create GitHub repository for current project:
-```bash
-cd my-project
-pbp newghrepo
-# Creates private repo, sets remote, pushes code
-```
-
-### `pbp status`
-Show project status, git info, GitHub sync status, and AI file configuration.
-
-## Development Workflow
-
-### Normal Development
-```bash
-git add src/...
-git commit -m "feat: add something"
-git push
-```
-
-### Release New Version
-```bash
-./publish.sh {major|minor|patch}
-```
-- Computes next semver tag from latest
-- Builds bin/pbproject with embedded version
-- Tags with latest commit message as annotation
-- Pushes; GitHub Actions creates release with assets
-
-### AI Development Support
-After creating a project:
-```bash
-llm-setup
-# Sets up LLM_INSTRUCTIONS.md and tool-specific symlinks
-```
-
-## Architecture
-
-- **Source**: Modular shell scripts in `src/`
-- **Distribution**: Single-file `bin/pbp` (built from src/)
-- **Build**: `bin/pbp-build` concatenates src/* with version info
-- **CI**: GitHub Actions builds on push; creates releases on tags
-- **Local**: Pre-commit hook auto-rebuilds and stages artifact
-
-The design allows rapid development in `src/` while distributing a single executable.
+**Architecture:** Modular shell scripts in `src/` built into single `bin/pbp` executable.
