@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v4.1.1-4-g41f584f-dirty
-# Built: 2025-08-13T14:22:52Z
-PBP_VERSION='v4.1.1-4-g41f584f-dirty'
-PBP_BUILD_TIME='2025-08-13T14:22:52Z'
+# Version: v4.1.1-5-g18b7522-dirty
+# Built: 2025-08-13T14:24:05Z
+PBP_VERSION='v4.1.1-5-g18b7522-dirty'
+PBP_BUILD_TIME='2025-08-13T14:24:05Z'
 
 # >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
@@ -197,13 +197,14 @@ create_github_repo() {
 # >>> /home/pbjorklund/Projects/pbp/src/tasks/init.sh
 check_pbp() {
   if [[ ! -d "$PBP_ROOT" ]]; then error "pbp directory not found at $PBP_ROOT"; fi
-  if [[ ! -f "$PBP_ROOT/bin/llm-setup" ]]; then error "llm-setup script not found at $PBP_ROOT/bin/llm-setup"; fi
   if [[ ! -d "$PBP_ROOT/project-templates" ]]; then error "project-templates directory not found at $PBP_ROOT/project-templates"; fi
 }
 
 init_project() {
   local project_name="${1:-}"
-  if [[ -z "$project_name" ]]; then error "Project name is required"; fi
+  if [[ -z "$project_name" ]]; then 
+    error "Project name is required. Use 'pbp init <name>' or 'pbp init .' for current directory"
+  fi
   local project_path display_name
   if [[ "$project_name" == "." ]]; then
     project_path="$PWD"; display_name="$(basename "$PWD")"

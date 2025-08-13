@@ -1,12 +1,13 @@
 check_pbp() {
   if [[ ! -d "$PBP_ROOT" ]]; then error "pbp directory not found at $PBP_ROOT"; fi
-  if [[ ! -f "$PBP_ROOT/bin/llm-setup" ]]; then error "llm-setup script not found at $PBP_ROOT/bin/llm-setup"; fi
   if [[ ! -d "$PBP_ROOT/project-templates" ]]; then error "project-templates directory not found at $PBP_ROOT/project-templates"; fi
 }
 
 init_project() {
   local project_name="${1:-}"
-  if [[ -z "$project_name" ]]; then error "Project name is required"; fi
+  if [[ -z "$project_name" ]]; then 
+    error "Project name is required. Use 'pbp init <name>' or 'pbp init .' for current directory"
+  fi
   local project_path display_name
   if [[ "$project_name" == "." ]]; then
     project_path="$PWD"; display_name="$(basename "$PWD")"
