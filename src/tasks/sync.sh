@@ -102,9 +102,10 @@ sync_repos() {
   while IFS= read -r repo_line; do
     if [[ -z "$repo_line" ]]; then continue; fi
     
-    local repo_name clone_url is_private pushed_at
+    local repo_name ssh_url is_private pushed_at owner
     repo_name=$(echo "$repo_line" | jq -r '.name')
-    clone_url=$(echo "$repo_line" | jq -r '.clone_url')
+    owner=$(echo "$repo_line" | jq -r '.owner')
+    ssh_url="git@github.com:${owner}/${repo_name}.git"
     is_private=$(echo "$repo_line" | jq -r '.private')
     pushed_at=$(echo "$repo_line" | jq -r '.pushed_at')
     
@@ -127,7 +128,7 @@ sync_repos() {
       continue
     fi
     
-    repos_to_clone+=("$repo_name|$clone_url|$is_private")
+    repos_to_clone+=("$repo_name|$ssh_url|$is_private")
     
   done <<< "$repos_json"
   
@@ -163,7 +164,7 @@ sync_repos() {
     if [[ "$dry_run" == true ]]; then
       info "Would clone (dry run):"
       for repo_info in "${repos_to_clone[@]}"; do
-        IFS='|' read -r repo_name clone_url is_private <<< "$repo_info"
+        IFS='|' read -r repo_name ssh_url is_private <<< "$repo_info"
         local privacy_indicator=""
         [[ "$is_private" == "true" ]] && privacy_indicator=" 🔒"
         echo "  → $repo_name$privacy_indicator"
@@ -174,15 +175,15 @@ sync_repos() {
       local failed=0
       
       for repo_info in "${repos_to_clone[@]}"; do
-        IFS='|' read -r repo_name clone_url is_private <<< "$repo_info"
+        IFS='|' read -r repo_name ssh_url is_private <<< "$repo_info"
         
         echo -n "  Cloning $repo_name... "
-        if git clone "$clone_url" "$sync_dir/$repo_name" --quiet 2>/dev/null; then
+        if git clone "$ssh_url" "$sync_dir/$repo_name" --quiet 2>/dev/null; then
           echo "✓"
-          ((cloned++))
+          cloned=$((cloned + 1))
         else
           echo "✗ Failed"
-          ((failed++))
+          failed=$((failed + 1))
         fi
       done
       
