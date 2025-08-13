@@ -1,3 +1,21 @@
+extract_with_history() {
+  local repo_root="$1" rel_subdir="$2" new_project_path="$3"
+  info "Extracting history for '$rel_subdir' from $repo_root"
+  if git -C "$repo_root" subtree --help &>/dev/null; then
+    # Use git subtree if available
+    local tmp_branch=pbp_split_$(date +%s)
+    git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
+    mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
+    git -C "$repo_root" branch -D "$tmp_branch" || true
+  else
+    # Fallback: copy directory and create fresh repo (no history preservation)
+    info "git subtree not available; falling back to copy without history"
+    local source_dir="$repo_root/$rel_subdir"
+    mkdir -p "$PROJECTS_DIR"; cp -r "$source_dir" "$new_project_path"
+    (cd "$new_project_path" && rm -rf .git 2>/dev/null || true && git init && git add . && git commit -m "Initial commit from $rel_subdir")
+  fi
+}
+
 migrate_folder() {
   local folder_name="${1:-}"; local source_path="${2:-$PWD}"; if [[ -z "$folder_name" ]]; then error "Folder name is required"; fi
   local no_history=false force=false
@@ -30,11 +48,7 @@ migrate_folder() {
       else
         rel_subdir="${source_path#$repo_root/}"
       fi
-      info "Extracting history for '$rel_subdir' from $repo_root"
-      local tmp_branch=pbp_split_$(date +%s)
-      git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
-      mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
-      git -C "$repo_root" branch -D "$tmp_branch" || true
+      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path"
       cd "$new_project_path"
     fi
   else
@@ -48,11 +62,7 @@ migrate_folder() {
       info "Migrating (no history) '$folder_name' -> '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; cd "$new_project_path"; git init; git add .; git commit -m "Initial commit"
     else
       local rel_subdir="${source_folder#$repo_root/}"
-      info "Extracting history for '$rel_subdir' from $repo_root"
-      local tmp_branch=pbp_split_$(date +%s)
-      git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
-      mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
-      git -C "$repo_root" branch -D "$tmp_branch" || true
+      extract_with_history "$repo_root" "$rel_subdir" "$new_project_path"
       cd "$new_project_path"
     fi
   fi
