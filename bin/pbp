@@ -8,12 +8,12 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v4.0.1-dirty
-# Built: 2025-08-13T13:53:55Z
-PBP_VERSION='v4.0.1-dirty'
-PBP_BUILD_TIME='2025-08-13T13:53:55Z'
+# Version: v4.1.1
+# Built: 2025-08-13T13:56:21Z
+PBP_VERSION='v4.1.1'
+PBP_BUILD_TIME='2025-08-13T13:56:21Z'
 
-# >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
+# >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
 SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
@@ -21,7 +21,7 @@ PBP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_NAME="$(basename "$0")"
 PROJECTS_DIR="${PBP_PROJECTS_DIR:-$HOME/Projects}"
 
-# >>> /home/pbjorklund/Projects/pbproject/src/lib/deps.sh
+# >>> /home/pbjorklund/Projects/pbp/src/lib/deps.sh
 check_dep_gh() {
   if ! command -v gh &>/dev/null; then
     error "GitHub CLI (gh) is required for this operation.
@@ -39,12 +39,12 @@ check_dep_git() {
     error "Git is required but not found in PATH."
   fi
 }
-# >>> /home/pbjorklund/Projects/pbproject/src/lib/ui.sh
+# >>> /home/pbjorklund/Projects/pbp/src/lib/ui.sh
 info() { echo "ℹ️  $1"; }
 success() { echo "✅ $1"; }
 error() { echo "❌ Error: $1" >&2; exit 1; }
 
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/check.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/check.sh
 show_check_help() {
   cat <<EOF
 pbp check - Check git status across all repositories
@@ -165,7 +165,7 @@ check_repos() {
     echo -e "${YELLOW}⚠️  Some repositories need attention (checked $checked_repos repos)${NC}"
   fi
 }
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/github.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/github.sh
 create_github_repo() {
   local project_path="${1:-$PWD}"; cd "$project_path"
   if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
@@ -194,7 +194,7 @@ create_github_repo() {
   else error "Failed to create GitHub repository"; fi
 }
 
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/init.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/init.sh
 check_pbp() {
   if [[ ! -d "$PBP_ROOT" ]]; then error "pbp directory not found at $PBP_ROOT"; fi
   if [[ ! -f "$PBP_ROOT/bin/llm-setup" ]]; then error "llm-setup script not found at $PBP_ROOT/bin/llm-setup"; fi
@@ -219,7 +219,7 @@ init_project() {
   success "Project '$display_name' initialized at $project_path"
 }
 
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/llm.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/llm.sh
 show_llm_help() {
   cat <<EOF
 pbp llm-setup - Set up AI development instruction files
@@ -460,7 +460,7 @@ setup_llm_files() {
   echo "2. Run your AI assistant and tell it: 'Follow the LLM_INSTRUCTIONS.md setup process'"
   echo "3. The AI will analyze your project and customize the instructions"
 }
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/migrate.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/migrate.sh
 extract_with_history() {
   local repo_root="$1" rel_subdir="$2" new_project_path="$3" source_dir="$4"
   info "Extracting history for '$rel_subdir' from $repo_root"
@@ -553,7 +553,7 @@ migrate_folder() {
   success "Successfully migrated to '$new_project_path'"
 }
 
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/status.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/status.sh
 show_status() {
   local project_path="${1:-$PWD}"; cd "$project_path"
   if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
@@ -591,7 +591,7 @@ show_status() {
   else echo "   ❌ llm-setup not found - LLM instruction files not configured"; echo "   💡 Run 'llm-setup' to add AI development support"; fi
 }
 
-# >>> /home/pbjorklund/Projects/pbproject/src/tasks/sync.sh
+# >>> /home/pbjorklund/Projects/pbp/src/tasks/sync.sh
 show_sync_help() {
   cat <<EOF
 pbp sync - Clone user's GitHub repositories and manage local repositories
@@ -864,7 +864,7 @@ sync_repos() {
     success "All local repositories have GitHub remotes!"
   fi
 }
-# >>> /home/pbjorklund/Projects/pbproject/src/main.sh
+# >>> /home/pbjorklund/Projects/pbp/src/main.sh
 show_help() {
   cat <<EOF
 $SCRIPT_NAME - Project lifecycle management tool
