@@ -60,17 +60,18 @@ pbp migrate . --no-history
 
 ## Installation
 
-### One-liner (Recommended)
+### Quick Install (Recommended)
 ```bash
-curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh | bash
+# Download and run setup
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o pbp
+chmod +x pbp && mkdir -p ~/.local/bin && mv pbp ~/.local/bin/
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc && source ~/.bashrc
 ```
 
-### Manual Install
+### With Setup Script  
 ```bash
-# Download assets
-curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh -o setup.sh
-curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o pbp
-chmod +x pbp setup.sh && ./setup.sh
+# Clone repo and use setup script (includes llm-setup)
+git clone https://github.com/pbjorklund/pbp.git && cd pbp && ./setup.sh
 ```
 
 ### From Source
