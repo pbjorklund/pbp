@@ -1,19 +1,24 @@
+check_dep_subtree() {
+  if ! git subtree --help &>/dev/null; then
+    error "git subtree is required for history-preserving migration.
+Install: 
+  - Ubuntu/Debian: apt install git-subtree
+  - RHEL/Fedora: dnf install git-subtree  
+  - macOS: brew install git
+Or use --no-history to migrate without preserving history."
+  fi
+}
+
 extract_with_history() {
   local repo_root="$1" rel_subdir="$2" new_project_path="$3"
+  check_dep_subtree
   info "Extracting history for '$rel_subdir' from $repo_root"
-  if git -C "$repo_root" subtree --help &>/dev/null; then
-    # Use git subtree if available
-    local tmp_branch=pbp_split_$(date +%s)
-    git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
-    mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
-    git -C "$repo_root" branch -D "$tmp_branch" || true
-  else
-    # Fallback: copy directory and create fresh repo (no history preservation)
-    info "git subtree not available; falling back to copy without history"
-    local source_dir="$repo_root/$rel_subdir"
-    mkdir -p "$PROJECTS_DIR"; cp -r "$source_dir" "$new_project_path"
-    (cd "$new_project_path" && rm -rf .git 2>/dev/null || true && git init && git add . && git commit -m "Initial commit from $rel_subdir")
-  fi
+  local tmp_branch=pbp_split_$(date +%s)
+  git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
+  mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
+  git -C "$repo_root" branch -D "$tmp_branch" || true
+  # Remove from source repo and commit
+  git -C "$repo_root" rm -r "$rel_subdir" && git -C "$repo_root" commit -m "Migrate $rel_subdir to standalone repo"
 }
 
 migrate_folder() {
