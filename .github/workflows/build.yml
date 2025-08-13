@@ -52,20 +52,26 @@ jobs:
       - name: Compute release notes
         id: notes
         run: |
+          TAG_REF=${GITHUB_REF#refs/tags/}
           SUBJECT=$(git log -1 --pretty=%s)
           BODY=$(git log -1 --pretty=%b)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          DATE=$(date -u +%Y-%m-%d)
+          printf "title<<EOF\n%s\nEOF\n" "$TAG_REF" >> "$GITHUB_OUTPUT"
           {
-            echo "subject<<EOF"
-            echo "$SUBJECT"
-            echo "EOF"
             echo "body<<EOF"
+            echo "Version: $TAG_REF ($DATE)"
+            echo "Commit: $SHORT_SHA"
+            echo
+            echo "Subject: $SUBJECT"
+            echo
             echo "$BODY"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.notes.outputs.subject }}
+          name: ${{ steps.notes.outputs.title }}
           body: ${{ steps.notes.outputs.body }}
           files: |
             bin/pbproject
