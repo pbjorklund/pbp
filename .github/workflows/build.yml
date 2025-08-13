@@ -54,8 +54,14 @@ jobs:
         run: |
           SUBJECT=$(git log -1 --pretty=%s)
           BODY=$(git log -1 --pretty=%b)
-          echo "subject=$SUBJECT" >> $GITHUB_OUTPUT
-          printf "body<<'EOF'\n%s\nEOF\n" "$BODY" >> $GITHUB_OUTPUT
+          {
+            echo "subject<<EOF"
+            echo "$SUBJECT"
+            echo "EOF"
+            echo "body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
