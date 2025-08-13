@@ -1,16 +1,57 @@
 migrate_folder() {
   local folder_name="${1:-}"; local source_path="${2:-$PWD}"; if [[ -z "$folder_name" ]]; then error "Folder name is required"; fi
-  local new_project_path current_dir
+  local no_history=false force=false
+  # parse flags
+  if [[ "${3:-}" == "--no-history" ]] || [[ "${2:-}" == "--no-history" ]]; then no_history=true; fi
+  if [[ "${3:-}" == "--force" ]] || [[ "${2:-}" == "--force" ]]; then force=true; fi
+
+  # resolve paths
+  source_path=$(realpath "$source_path")
+  local repo_root="" current_dir new_project_path source_folder
+  if git -C "$source_path" rev-parse --show-toplevel &>/dev/null; then repo_root=$(git -C "$source_path" rev-parse --show-toplevel); fi
+
   if [[ "$folder_name" == "." ]]; then
-    current_dir="$(basename "$PWD")"; new_project_path="$PROJECTS_DIR/$current_dir"
-    if [[ "$PWD" == "$PROJECTS_DIR"/* ]] && [[ -d .git ]]; then error "Already in ~/Projects/ and is a git repository"; fi
+    current_dir="$(basename "$source_path")"; new_project_path="$PROJECTS_DIR/$current_dir"
+    # Only block when at repo root under Projects and not forced
+    if [[ "$source_path" == "$PROJECTS_DIR"/* ]] && [[ -n "$repo_root" ]] && [[ "$source_path" == "$repo_root" ]] && [[ "$force" != true ]]; then
+      error "Refusing to migrate repo root under ~/Projects. Use a subfolder or --force."
+    fi
     if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
-    info "Migrating current directory '$current_dir' to '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; cd ..; mv "$current_dir" "$new_project_path"; cd "$new_project_path"
+
+    if [[ "$no_history" == true ]] || [[ -z "$repo_root" ]]; then
+      info "Migrating (no history) '$current_dir' -> '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; cd "$source_path/.."; mv "$current_dir" "$new_project_path"; cd "$new_project_path"; git init; git add .; git commit -m "Initial commit"
+    else
+      # history-preserving using git subtree
+      local rel_subdir
+      if [[ "$source_path" == "$repo_root" ]]; then rel_subdir="."; else rel_subdir="${source_path#$repo_root/}"; fi
+      if [[ "$rel_subdir" == "." ]]; then error "At repo root; specify a subfolder or use --force with --no-history"; fi
+      info "Extracting history for '$rel_subdir' from $repo_root"
+      local tmp_branch=pbproject_split_$(date +%s)
+      git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
+      mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
+      git -C "$repo_root" branch -D "$tmp_branch" || true
+      cd "$new_project_path"
+    fi
   else
-    source_path=$(realpath "$source_path"); local source_folder="$source_path/$folder_name"
+    source_folder="$source_path/$folder_name"
     if [[ ! -d "$source_folder" ]]; then error "Folder '$folder_name' not found in '$source_path'"; fi
     new_project_path="$PROJECTS_DIR/$folder_name"; if [[ -e "$new_project_path" ]]; then error "Directory '$new_project_path' already exists"; fi
-    info "Migrating folder '$folder_name' to '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; cd "$new_project_path"
+    if git -C "$source_path" rev-parse --show-toplevel &>/dev/null; then repo_root=$(git -C "$source_path" rev-parse --show-toplevel); fi
+    if [[ -n "$repo_root" ]] && [[ "$source_folder" == "$repo_root" ]]; then error "Cannot migrate entire repo as a folder; choose a subfolder"; fi
+
+    if [[ "$no_history" == true ]] || [[ -z "$repo_root" ]]; then
+      info "Migrating (no history) '$folder_name' -> '$new_project_path'"; mkdir -p "$PROJECTS_DIR"; mv "$source_folder" "$new_project_path"; cd "$new_project_path"; git init; git add .; git commit -m "Initial commit"
+    else
+      local rel_subdir="${source_folder#$repo_root/}"
+      info "Extracting history for '$rel_subdir' from $repo_root"
+      local tmp_branch=pbproject_split_$(date +%s)
+      git -C "$repo_root" subtree split --prefix="$rel_subdir" -b "$tmp_branch"
+      mkdir -p "$PROJECTS_DIR"; mkdir "$new_project_path"; (cd "$new_project_path" && git init && git pull "$repo_root" "$tmp_branch")
+      git -C "$repo_root" branch -D "$tmp_branch" || true
+      cd "$new_project_path"
+    fi
   fi
-  if [[ ! -d .git ]]; then git init; fi; git add .; git commit -m "Initial commit"; create_github_repo "$new_project_path"; success "Successfully migrated to '$new_project_path'"
+
+  create_github_repo "$new_project_path"
+  success "Successfully migrated to '$new_project_path'"
 }
