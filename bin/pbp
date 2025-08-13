@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v2.0.12
-# Built: 2025-08-13T13:22:30Z
-PBP_VERSION='v2.0.12'
-PBP_BUILD_TIME='2025-08-13T13:22:30Z'
+# Version: v2.0.12-1-ge1d15bb-dirty
+# Built: 2025-08-13T13:25:18Z
+PBP_VERSION='v2.0.12-1-ge1d15bb-dirty'
+PBP_BUILD_TIME='2025-08-13T13:25:18Z'
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/core.sh
 # Paths and globals
@@ -19,7 +19,7 @@ SCRIPT_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
 PBP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT_NAME="$(basename "$0")"
-PROJECTS_DIR="$HOME/Projects"
+PROJECTS_DIR="${PBP_PROJECTS_DIR:-$HOME/Projects}"
 
 # >>> /home/pbjorklund/Projects/pbproject/src/lib/deps.sh
 check_dep_gh() {

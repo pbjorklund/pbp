@@ -20,6 +20,11 @@ pbp migrate .
 pbp migrate components/auth
 # → ~/Projects/auth with history
 
+# Use custom projects directory
+export PBP_PROJECTS_DIR=~/Development
+pbp migrate . 
+# → ~/Development/useful-component
+
 # Skip history preservation (faster)
 pbp migrate . --no-history
 ```
@@ -30,6 +35,9 @@ pbp migrate . --no-history
 | `pbp migrate <folder\|.>` | Extract folder to new repo with history |
 | `pbp newghrepo` | Create GitHub repo for current project |  
 | `pbp status` | Show project and git status |
+
+**Environment:**
+- `PBP_PROJECTS_DIR` - Where to create new projects (default: `~/Projects`)
 
 ## Requirements
 
