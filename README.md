@@ -5,7 +5,7 @@
 ## Features
 
 - **Smart Migration** - Extract any folder into a new repo with complete git history
-- **Zero Dependencies** - Works with standard git installation (no subtree required)  
+- **Minimal Dependencies** - Works with standard git installation (no subtree required)  
 - **Auto GitHub Integration** - Creates repos, sets remotes, pushes code automatically
 - **AI Development Ready** - Sets up instruction files for Claude, GitHub Copilot, etc.
 - **Version Tracking** - Shows version/build info on every command
