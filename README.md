@@ -14,7 +14,7 @@
 
 ```bash
 # Install
-curl -L https://github.com/pbjorklund/pbp/releases/latest/download/setup.sh | bash
+curl -L https://github.com/pbjorklund/pbp/releases/latest/download/pbp -o ~/.local/bin/pbp && chmod +x ~/.local/bin/pbp
 
 # Extract a folder from your current repo
 cd my-monorepo/useful-component
