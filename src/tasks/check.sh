@@ -49,39 +49,37 @@ check_repos() {
   local found_issues=false
   local checked_repos=0
   
-  cd "$check_dir" || error "Cannot access directory: $check_dir"
+  builtin cd "$check_dir" || error "Cannot access directory: $check_dir"
   
   for dir in */; do
     if [[ -d "$dir/.git" ]]; then
       ((checked_repos++))
-      cd "$dir" || continue
       
-      # Get repo name
-      local repo_name
-      repo_name=$(basename "$PWD")
+      # Get repo name (remove trailing slash)
+      local repo_name="${dir%/}"
       
-      # Fetch latest remote changes silently
-      git fetch --quiet 2>/dev/null || true
+      # Fetch latest remote changes silently (with timeout)
+      timeout 10 git -C "$dir" fetch --quiet 2>/dev/null || true
       
       # Check for uncommitted changes
-      if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+      if ! git -C "$dir" diff-index --quiet HEAD -- 2>/dev/null; then
         echo -e "${RED}❌ $repo_name${NC} - Uncommitted changes"
         found_issues=true
-      elif [[ -n "$(git status --porcelain)" ]]; then
+      elif [[ -n "$(git -C "$dir" status --porcelain)" ]]; then
         echo -e "${YELLOW}⚠️  $repo_name${NC} - Untracked/staged files"
         found_issues=true
       else
         # Check for unpushed/unpulled commits
         local local_head remote_head
-        local_head=$(git rev-parse HEAD 2>/dev/null || echo "")
-        remote_head=$(git rev-parse @{u} 2>/dev/null || echo "")
+        local_head=$(git -C "$dir" rev-parse HEAD 2>/dev/null || echo "")
+        remote_head=$(git -C "$dir" rev-parse @{u} 2>/dev/null || echo "")
         
         if [[ -n "$local_head" && -n "$remote_head" ]]; then
           if [[ "$local_head" != "$remote_head" ]]; then
             # Check if we're ahead or behind
             local ahead behind
-            ahead=$(git rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
-            behind=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+            ahead=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
+            behind=$(git -C "$dir" rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
             
             if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
               echo -e "${RED}🔄 $repo_name${NC} - $behind commits to push, $ahead commits to pull (diverged)"
@@ -104,8 +102,6 @@ check_repos() {
           found_issues=true
         fi
       fi
-      
-      cd ..
     fi
   done
   
