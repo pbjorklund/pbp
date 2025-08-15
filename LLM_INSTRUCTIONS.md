@@ -11,11 +11,12 @@ CLI tool for dev project lifecycle management. Extract folders from monorepos wi
 
 ## Development Workflow
 - **Build**: `./bin/pbp-build` (required to test changes)
-- **Release**: `./publish.sh {major|minor|patch}` (handles versioning, building, tagging, GitHub Actions)
+- **Release**: `./publish.sh {major|minor|patch}` (tags and triggers CI to build/release)
 - **Style**: All scripts use `set -euo pipefail`, error()/info()/success() functions from ui.sh
 
 ## Critical Gotchas
 - **Always use publish.sh for releases** - never manually create git tags or releases
 - **Must build to test** - changes in src/ don't work until `./bin/pbp-build`
+- **CI builds releases** - publish.sh only tags, GitHub Actions builds the final binary
 - **GitHub CLI required** - most commands need `gh auth login`
 - **Git repo assumptions** - commands expect to run in git repositories
