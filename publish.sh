@@ -39,6 +39,9 @@ case "$inc" in
 esac
 new_tag="v${MA}.${MI}.${PA}"
 
+# Get the current commit message before we make any changes
+msg=$(git log -1 --pretty=%B)
+
 # Build with VERSION baked into artifact
 export VERSION="$new_tag"
 chmod +x bin/pbp-build
@@ -46,9 +49,6 @@ chmod +x bin/pbp-build
 
 git add bin/pbp
 git commit -m "build: update version to $new_tag in binary"
-
-# Tag with latest commit message as annotation
-msg=$(git log -1 --pretty=%B)
 
 echo "Tagging $new_tag"
 git tag -a "$new_tag" -m "$msg"
