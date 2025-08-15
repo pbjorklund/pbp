@@ -53,7 +53,7 @@ check_repos() {
   
   for dir in */; do
     if [[ -d "$dir/.git" ]]; then
-      ((checked_repos++))
+      checked_repos=$((checked_repos + 1))
       
       # Get repo name (remove trailing slash)
       local repo_name="${dir%/}"

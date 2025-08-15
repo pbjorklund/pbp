@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v5.0.0-dirty
-# Built: 2025-08-15T11:19:05Z
-PBP_VERSION='v5.0.0-dirty'
-PBP_BUILD_TIME='2025-08-15T11:19:05Z'
+# Version: v6.0.0-dirty
+# Built: 2025-08-15T11:23:23Z
+PBP_VERSION='v6.0.0-dirty'
+PBP_BUILD_TIME='2025-08-15T11:23:23Z'
 
 # >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
@@ -100,7 +100,7 @@ check_repos() {
   
   for dir in */; do
     if [[ -d "$dir/.git" ]]; then
-      ((checked_repos++))
+      checked_repos=$((checked_repos + 1))
       
       # Get repo name (remove trailing slash)
       local repo_name="${dir%/}"
