@@ -36,8 +36,8 @@ jobs:
          with:
            fetch-depth: 0  # Fetch all history and tags
        - name: Resolve tag ref
-        id: ref
-        run: |
+         id: ref
+         run: |
            if [[ -n "${{ inputs.tag }}" ]]; then
              echo "ref=refs/tags/${{ inputs.tag }}" >> $GITHUB_OUTPUT
              git checkout "refs/tags/${{ inputs.tag }}"
