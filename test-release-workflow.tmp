@@ -1,0 +1,12 @@
+# Test Release Workflow
+
+This is a temporary file to test the complete release workflow.
+
+## Features
+- Feature A: Basic functionality
+- Feature B: Advanced options
+
+## Configuration
+timeout: 30
+retries: 3
+debug: false
