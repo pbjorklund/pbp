@@ -45,7 +45,7 @@ chmod +x bin/pbp-build
 ./bin/pbp-build >/dev/null
 
 git add bin/pbp
-# Do not create a new commit; tag the latest commit
+git commit -m "build: update version to $new_tag in binary"
 
 # Tag with latest commit message as annotation
 msg=$(git log -1 --pretty=%B)
