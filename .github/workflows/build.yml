@@ -52,19 +52,27 @@ jobs:
         id: notes
         run: |
           TAG_REF=${GITHUB_REF#refs/tags/}
-          SUBJECT=$(git log -1 --pretty=%s)
-          BODY=$(git log -1 --pretty=%b)
           SHORT_SHA=$(git rev-parse --short HEAD)
           DATE=$(date -u +%Y-%m-%d)
+          
+          # Get previous tag to generate changelog
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          
           printf "title<<EOF\n%s\nEOF\n" "$TAG_REF" >> "$GITHUB_OUTPUT"
           {
             echo "body<<EOF"
             echo "Version: $TAG_REF ($DATE)"
             echo "Commit: $SHORT_SHA"
             echo
-            echo "Subject: $SUBJECT"
-            echo
-            echo "$BODY"
+            if [[ -n "$PREV_TAG" ]]; then
+              echo "## Changes since $PREV_TAG"
+              echo
+              git log --pretty="- %s" "$PREV_TAG..HEAD"
+            else
+              echo "## Changes"
+              echo
+              git log --pretty="- %s" HEAD
+            fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
       - name: Release
