@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v6.0.2
-# Built: 2025-08-15T11:26:16Z
-PBP_VERSION='v6.0.2'
-PBP_BUILD_TIME='2025-08-15T11:26:16Z'
+# Version: v7.0.0-3-gc65830f-dirty
+# Built: 2025-08-17T18:28:52Z
+PBP_VERSION='v7.0.0-3-gc65830f-dirty'
+PBP_BUILD_TIME='2025-08-17T18:28:52Z'
 
 # >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
@@ -82,6 +82,9 @@ check_repos() {
   if [[ ! -d "$check_dir" ]]; then
     error "Directory does not exist: $check_dir"
   fi
+  
+  # Set up interrupt handler
+  trap 'echo -e "\n\nInterrupted by user"; exit 130' INT
   
   # Colors
   local RED='\033[0;31m'

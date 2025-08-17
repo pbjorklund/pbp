@@ -36,6 +36,9 @@ check_repos() {
     error "Directory does not exist: $check_dir"
   fi
   
+  # Set up interrupt handler
+  trap 'echo -e "\n\nInterrupted by user"; exit 130' INT
+  
   # Colors
   local RED='\033[0;31m'
   local GREEN='\033[0;32m'  
