@@ -3,10 +3,13 @@ show_check_help() {
 pbp check - Check git status across all repositories
 
 USAGE:
-    pbp check [directory]
+    pbp check [directory] [--debug]
 
 ARGUMENTS:
     directory    Directory to scan for git repos (default: PBP_PROJECTS_DIR or ~/Projects)
+
+OPTIONS:
+    --debug      Show debug information for tracking branch issues
 
 DESCRIPTION:
     Scans the specified directory for git repositories and reports their status:
@@ -18,6 +21,7 @@ DESCRIPTION:
 EXAMPLES:
     pbp check                  # Check ~/Projects (or PBP_PROJECTS_DIR)
     pbp check ~/Development    # Check specific directory
+    pbp check --debug          # Show debug info for repos with issues
     
 ENVIRONMENT:
     PBP_PROJECTS_DIR          # Default directory to check
@@ -28,6 +32,7 @@ EOF
 check_single_repo() {
   local check_dir="$1"
   local dir="$2"
+  local debug_mode="$3"
   local repo_name="${dir%/}"
   
   # Colors
@@ -59,6 +64,16 @@ check_single_repo() {
         ahead=$(git -C "$check_dir/$dir" rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
         behind=$(git -C "$check_dir/$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
         
+        if [[ "$debug_mode" == "true" && ("$behind" -gt 0 || "$ahead" -gt 0) ]]; then
+          local upstream_branch current_branch
+          upstream_branch=$(git -C "$check_dir/$dir" rev-parse --abbrev-ref @{u} 2>/dev/null || echo "unknown")
+          current_branch=$(git -C "$check_dir/$dir" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+          local actual_head
+          actual_head=$(git -C "$check_dir/$dir" log -1 --format="%H" 2>/dev/null | cut -c1-7)
+          echo "DEBUG $repo_name: local=$local_head remote=$remote_head upstream=$upstream_branch branch=$current_branch actual_head=$actual_head ahead=$ahead behind=$behind" >&2
+          echo "DEBUG $repo_name: path=$check_dir/$dir" >&2
+        fi
+        
         if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
           echo -e "${RED}🔄 $repo_name${NC} - $ahead commits to push, $behind commits to pull (diverged)"
           return 1
@@ -74,6 +89,12 @@ check_single_repo() {
         return 0
       fi
     elif [[ -n "$local_head" ]]; then
+      if [[ "$debug_mode" == "true" ]]; then
+        local current_branch remotes
+        current_branch=$(git -C "$check_dir/$dir" branch --show-current 2>/dev/null || echo "unknown")
+        remotes=$(git -C "$check_dir/$dir" remote -v 2>/dev/null | head -3 || echo "none")
+        echo "DEBUG $repo_name: no upstream tracking - branch=$current_branch remotes: $remotes" >&2
+      fi
       echo -e "${YELLOW}🔗 $repo_name${NC} - No remote tracking branch"
       return 1
     else
@@ -84,12 +105,26 @@ check_single_repo() {
 }
 
 check_repos() {
-  local check_dir="${1:-$PROJECTS_DIR}"
+  local check_dir="$PROJECTS_DIR"
+  local debug_mode=false
   
-  if [[ "${1:-}" == "--help" ]]; then
-    show_check_help
-    return 0
-  fi
+  # Parse arguments
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --help)
+        show_check_help
+        return 0
+        ;;
+      --debug)
+        debug_mode=true
+        shift
+        ;;
+      *)
+        check_dir="$1"
+        shift
+        ;;
+    esac
+  done
   
   if [[ ! -d "$check_dir" ]]; then
     error "Directory does not exist: $check_dir"
@@ -124,7 +159,7 @@ check_repos() {
     if [[ -d "$dir/.git" ]]; then
       checked_repos=$((checked_repos + 1))
       {
-        if check_single_repo "$check_dir" "$dir"; then
+        if check_single_repo "$check_dir" "$dir" "$debug_mode"; then
           echo "0" >> "$status_file"
         else
           echo "1" >> "$status_file"
