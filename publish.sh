@@ -25,17 +25,12 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   exit 1
 fi
 
-# Get latest tag (semver vX.Y.Z). If none, start at v0.1.0
-last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.1.0")
+# Get latest tag (semver vX.Y.Z). If none, start at v0.0.0 and bump to first release
+last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
 # Strip leading v
 base=${last_tag#v}
 IFS='.' read -r MA MI PA <<<"$base"
-# Handle special case for initial v0.1.0 (treat as v0.0.0 for first increment)
-if [[ "$base" == "0.1.0" && ! $(git tag -l "v0.1.0") ]]; then
-  MA=0; MI=0; PA=0
-else
-  MA=${MA:-0}; MI=${MI:-0}; PA=${PA:-0}
-fi
+MA=${MA:-0}; MI=${MI:-0}; PA=${PA:-0}
 case "$inc" in
   major) 
     echo "WARNING: Creating major version bump from $last_tag to v$((MA+1)).0.0"
