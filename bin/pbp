@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v7.0.0-3-gc65830f-dirty
-# Built: 2025-08-17T18:28:52Z
-PBP_VERSION='v7.0.0-3-gc65830f-dirty'
-PBP_BUILD_TIME='2025-08-17T18:28:52Z'
+# Version: v7.0.1-dirty
+# Built: 2025-08-20T19:34:13Z
+PBP_VERSION='v7.0.1-dirty'
+PBP_BUILD_TIME='2025-08-20T19:34:13Z'
 
 # >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
@@ -128,8 +128,8 @@ check_repos() {
           if [[ "$local_head" != "$remote_head" ]]; then
             # Check if we're ahead or behind
             local ahead behind
-            ahead=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
-            behind=$(git -C "$dir" rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+            ahead=$(git -C "$dir" rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+            behind=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
             
             if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
               echo -e "${RED}🔄 $repo_name${NC} - $behind commits to push, $ahead commits to pull (diverged)"

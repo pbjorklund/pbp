@@ -81,8 +81,8 @@ check_repos() {
           if [[ "$local_head" != "$remote_head" ]]; then
             # Check if we're ahead or behind
             local ahead behind
-            ahead=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
-            behind=$(git -C "$dir" rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+            ahead=$(git -C "$dir" rev-list --count @{u}..HEAD 2>/dev/null || echo "0")
+            behind=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
             
             if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
               echo -e "${RED}🔄 $repo_name${NC} - $behind commits to push, $ahead commits to pull (diverged)"
