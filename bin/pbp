@@ -8,10 +8,10 @@ IFS=$'\n\t'
 PBP_VERSION="${PBP_VERSION:-unknown}"
 PBP_BUILD_TIME="${PBP_BUILD_TIME:-unknown}"
 print_version_note() { echo "pbp version: ${PBP_VERSION} (${PBP_BUILD_TIME})"; }
-# Version: v7.0.1-dirty
-# Built: 2025-08-20T19:34:13Z
-PBP_VERSION='v7.0.1-dirty'
-PBP_BUILD_TIME='2025-08-20T19:34:13Z'
+# Version: v7.0.2-dirty
+# Built: 2025-08-20T19:38:03Z
+PBP_VERSION='v7.0.2-dirty'
+PBP_BUILD_TIME='2025-08-20T19:38:03Z'
 
 # >>> /home/pbjorklund/Projects/pbp/src/lib/core.sh
 # Paths and globals
@@ -132,13 +132,13 @@ check_repos() {
             behind=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
             
             if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
-              echo -e "${RED}🔄 $repo_name${NC} - $behind commits to push, $ahead commits to pull (diverged)"
-              found_issues=true
-            elif [[ "$behind" -gt 0 ]]; then
-              echo -e "${YELLOW}📤 $repo_name${NC} - $behind commits ahead (unpushed)"
+              echo -e "${RED}🔄 $repo_name${NC} - $ahead commits to push, $behind commits to pull (diverged)"
               found_issues=true
             elif [[ "$ahead" -gt 0 ]]; then
-              echo -e "${YELLOW}📥 $repo_name${NC} - $ahead commits behind remote (need to pull)"
+              echo -e "${YELLOW}📤 $repo_name${NC} - $ahead commits ahead (unpushed)"
+              found_issues=true
+            elif [[ "$behind" -gt 0 ]]; then
+              echo -e "${YELLOW}📥 $repo_name${NC} - $behind commits behind remote (need to pull)"
               found_issues=true
             fi
           else

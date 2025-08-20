@@ -85,13 +85,13 @@ check_repos() {
             behind=$(git -C "$dir" rev-list --count HEAD..@{u} 2>/dev/null || echo "0")
             
             if [[ "$behind" -gt 0 && "$ahead" -gt 0 ]]; then
-              echo -e "${RED}🔄 $repo_name${NC} - $behind commits to push, $ahead commits to pull (diverged)"
-              found_issues=true
-            elif [[ "$behind" -gt 0 ]]; then
-              echo -e "${YELLOW}📤 $repo_name${NC} - $behind commits ahead (unpushed)"
+              echo -e "${RED}🔄 $repo_name${NC} - $ahead commits to push, $behind commits to pull (diverged)"
               found_issues=true
             elif [[ "$ahead" -gt 0 ]]; then
-              echo -e "${YELLOW}📥 $repo_name${NC} - $ahead commits behind remote (need to pull)"
+              echo -e "${YELLOW}📤 $repo_name${NC} - $ahead commits ahead (unpushed)"
+              found_issues=true
+            elif [[ "$behind" -gt 0 ]]; then
+              echo -e "${YELLOW}📥 $repo_name${NC} - $behind commits behind remote (need to pull)"
               found_issues=true
             fi
           else
