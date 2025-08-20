@@ -10,6 +10,7 @@ build/
 target/
 *.o
 *.so
+bin/pbp
 
 # Environment
 .env
