@@ -45,6 +45,14 @@ migrate_folder() {
   git add .
   git commit -m "Initial commit (migrated from $(basename "$repo_root"))"
 
+  # Trust mise config if present
+  if [[ -f "mise.toml" ]] || [[ -f ".mise.toml" ]]; then
+    if command -v mise &>/dev/null; then
+      info "Trusting mise config"
+      mise trust
+    fi
+  fi
+
   # Create GitHub repo and set up remote
   create_github_repo "$new_project_path"
   success "Successfully migrated to '$new_project_path'"
