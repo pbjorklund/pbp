@@ -10,6 +10,7 @@ USAGE:
     $SCRIPT_NAME newghrepo [project-path]
     $SCRIPT_NAME llm-setup [--status]
     $SCRIPT_NAME status [project-path]
+    $SCRIPT_NAME update
     $SCRIPT_NAME --help
 
 COMMANDS:
@@ -20,6 +21,7 @@ COMMANDS:
     newghrepo  Create GitHub repository for current project
     llm-setup  Set up AI development instruction files
     status     Show project status and configuration
+    update     Update pbp to latest version
     
 FLAGS:
     migrate --no-history   Move without preserving history
@@ -46,6 +48,7 @@ main() {
     newghrepo) shift; create_github_repo "$@";;
     llm-setup) shift; llm_setup "$@";;
     status) shift; show_status "$@";;
+    update) shift; update_pbp "$@";;
     --help|-h|help) show_help;;
     "") show_help;;
     *) error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage.";;
