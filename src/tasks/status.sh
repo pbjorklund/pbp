@@ -30,7 +30,5 @@ show_status() {
   if [[ -f package.json ]]; then echo "   📦 package.json (Node.js project)"; elif [[ -f Cargo.toml ]]; then echo "   🦀 Cargo.toml (Rust project)"; elif [[ -f pyproject.toml ]] || [[ -f requirements.txt ]]; then echo "   🐍 Python project"; elif [[ -f go.mod ]]; then echo "   🐹 go.mod (Go project)"; fi
   echo
   echo "🤖 AI Development Support:";
-  if command -v llm-setup &>/dev/null; then llm-setup --status;
-  elif [[ -x "$PBP_ROOT/bin/llm-setup" ]]; then "$PBP_ROOT/bin/llm-setup" --status;
-  else echo "   ❌ llm-setup not found - LLM instruction files not configured"; echo "   💡 Run 'llm-setup' to add AI development support"; fi
+  show_llm_status
 }
