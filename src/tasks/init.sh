@@ -50,6 +50,9 @@ target/
 .env
 .env.local
 
+# Workflow tools
+.af/
+
 # IDE
 .vscode/settings.json
 .idea/

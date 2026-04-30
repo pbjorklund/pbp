@@ -34,21 +34,21 @@ create_embedded_templates() {
 # {{PROJECT_NAME}} - LLM Development Instructions
 
 ## Project Overview
-- **Purpose**: [TODO: Brief description of what this project does]
-- **Type**: [TODO: Type of project - CLI tool, web app, library, etc.]
-- **Target Users**: [TODO: Who uses this project]
-- **Tech Stack**: [TODO: Main technologies used]
+- Purpose: [TODO: Brief description of what this project does]
+- Type: [TODO: Type of project, CLI tool, web app, library, etc.]
+- Target users: [TODO: Who uses this project]
+- Tech stack: [TODO: Main technologies used]
 
 ## Code Organization
-- **Key Directories**: [TODO: Important directories to know about]
-- **Entry Points**: [TODO: Main files where execution starts]
-- **Configuration**: [TODO: Config files and how they work]
-- **Dependencies**: [TODO: Key external dependencies]
+- Key directories: [TODO: Important directories to know about]
+- Entry points: [TODO: Main files where execution starts]
+- Configuration: [TODO: Config files and how they work]
+- Dependencies: [TODO: Key external dependencies]
 
 ## Development Guidelines
-- **Code Style**: [TODO: Coding standards and conventions]
-- **Documentation Standards**: [TODO: How to document code]
-- **Review Process**: [TODO: How changes are reviewed]
+- Code style: [TODO: Coding standards and conventions]
+- Documentation standards: [TODO: How to document code]
+- Review process: [TODO: How changes are reviewed]
 
 ## Project-Specific Context
 
@@ -82,7 +82,7 @@ EOF
 
 ## Contributing
 
-Contributions welcome! Please read the contributing guidelines first.
+Read the contributing guidelines before sending changes.
 
 ## License
 
@@ -121,6 +121,9 @@ logs/
 # Environment files
 .env
 .env.local
+
+# Workflow tools
+.af/
 EOF
 }
 

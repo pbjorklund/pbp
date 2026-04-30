@@ -39,34 +39,34 @@ Once analysis is complete, replace this section with:
 # [Project Name] - LLM Development Instructions
 
 ## Project Overview
-- **Purpose**: [Brief description of what this project does]
-- **Type**: [CLI tool/Web app/Library/Configuration/etc.]
-- **Target Users**: [Who uses this project]
-- **Tech Stack**: [Primary languages, frameworks, tools]
+- Purpose: [Brief description of what this project does]
+- Type: [CLI tool, web app, library, configuration, etc.]
+- Target users: [Who uses this project]
+- Tech stack: [Primary languages, frameworks, tools]
 
 ## Development Environment
-- **Prerequisites**: [Required software, versions, accounts]
-- **Setup Commands**: [How to get development environment running]
-- **Build Process**: [How to build/compile the project]
-- **Testing**: [How to run tests, what test frameworks are used]
+- Prerequisites: [Required software, versions, accounts]
+- Setup commands: [How to get development environment running]
+- Build process: [How to build or compile the project]
+- Testing: [How to run tests, what test frameworks are used]
 
 ## Code Organization
-- **Key Directories**: [Brief description of main folders and their purposes]
-- **Entry Points**: [Main files where execution begins]
-- **Configuration**: [Where settings/config files are located]
-- **Dependencies**: [How dependencies are managed]
+- Key directories: [Brief description of main folders and their purposes]
+- Entry points: [Main files where execution begins]
+- Configuration: [Where settings and config files are located]
+- Dependencies: [How dependencies are managed]
 
 ## Development Guidelines
-- **Code Style**: [Formatting, naming conventions, patterns used]
-- **Testing Requirements**: [When to write tests, coverage expectations]
-- **Documentation Standards**: [How to document code, APIs, features]
-- **Review Process**: [How changes are reviewed and merged]
+- Code style: [Formatting, naming conventions, patterns used]
+- Testing requirements: [When to write tests, coverage expectations]
+- Documentation standards: [How to document code, APIs, features]
+- Review process: [How changes are reviewed and merged]
 
 ## Common Tasks
-- **Adding Features**: [Typical workflow for new functionality]
-- **Bug Fixes**: [How to approach debugging and fixes]
-- **Updating Dependencies**: [Process for dependency management]
-- **Deployment**: [How releases/deployments work]
+- Adding features: [Typical workflow for new functionality]
+- Bug fixes: [How to approach debugging and fixes]
+- Updating dependencies: [Process for dependency management]
+- Deployment: [How releases or deployments work]
 
 ## Project-Specific Context
 [Any domain-specific knowledge, business rules, architectural decisions, or special considerations that would help an AI assistant work effectively on this codebase]
