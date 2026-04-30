@@ -78,7 +78,7 @@ init_project() {
   readme_template="$(template_path README.md || true)"
   gitignore_template="$(template_path .gitignore || true)"
   info "Creating project directory: $project_path"; mkdir -p "$project_path"; cd "$project_path"
-  if [[ ! -d .git ]]; then info "Initializing git repository"; git init; success "Git repository initialized"; else info "Git repository already exists"; fi
+  if [[ ! -d .git ]]; then info "Initializing git repository"; git init -b main; success "Git repository initialized"; else info "Git repository already exists"; fi
   info "Basic project structure created"
   if [[ ! -f README.md ]]; then
     if [[ -n "$readme_template" ]]; then

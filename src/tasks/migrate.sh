@@ -41,7 +41,7 @@ migrate_folder() {
 
   # Initialize new repo
   cd "$new_project_path"
-  git init
+  git init -b main
   git add .
   git commit -m "Initial commit (migrated from $(basename "$repo_root"))"
 
