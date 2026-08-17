@@ -11,6 +11,7 @@ USAGE:
     $SCRIPT_NAME llm-setup [--status]
     $SCRIPT_NAME status [project-path]
     $SCRIPT_NAME update
+    $SCRIPT_NAME version
     $SCRIPT_NAME --help
 
 COMMANDS:
@@ -22,6 +23,7 @@ COMMANDS:
     llm-setup  Set up AI development instruction files
     status     Show project status and configuration
     update     Update pbp to latest version
+    version    Show installed pbp version
     
 FLAGS:
     migrate --no-history   Move without preserving history
@@ -49,6 +51,7 @@ main() {
     llm-setup) shift; llm_setup "$@";;
     status) shift; show_status "$@";;
     update) shift; update_pbp "$@";;
+    version|--version|-V) :;;
     --help|-h|help) show_help;;
     "") show_help;;
     *) error "Unknown command: $1. Use '$SCRIPT_NAME --help' for usage.";;
