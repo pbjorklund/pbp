@@ -1,6 +1,24 @@
+ensure_initial_commit() {
+  if git rev-parse --verify HEAD &>/dev/null; then
+    return
+  fi
+
+  info "Creating initial commit"
+  git add --all
+  if git diff --cached --quiet; then
+    error "No files to commit. Add project files before creating a GitHub repository."
+  fi
+
+  if ! git commit -m "chore: initial commit"; then
+    error "Failed to create the initial commit. Configure your Git author before retrying."
+  fi
+  success "Initial commit created"
+}
+
 create_github_repo() {
   local project_path="${1:-$PWD}"; cd "$project_path"
   if [[ ! -d .git ]]; then error "Not in a git repository. Run this command in a project directory."; fi
+  ensure_initial_commit
   check_dep_gh
   local project_name; project_name=$(basename "$project_path")
   local current_remote=""; if git remote get-url origin &>/dev/null; then current_remote=$(git remote get-url origin); info "Current remote origin: $current_remote"
